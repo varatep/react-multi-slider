@@ -394,20 +394,20 @@
       }.bind(this);
     },
 
-    _addHandlers: function(eventMap) {
+    _addHandlers: function (eventMap) {
       for (var key in eventMap) {
         document.addEventListener(key, eventMap[key], false);
       }
     },
 
-    _removeHandlers: function(eventMap) {
+    _removeHandlers: function (eventMap) {
       for (var key in eventMap) {
         document.removeEventListener(key, eventMap[key], false);
       }
     },
 
     _start: function (i, position) {
-      document.activeElement.blur();
+      if (document.activeElement) document.activeElement.blur();
 
       this._fireEvent('onBeforeChange');
 
