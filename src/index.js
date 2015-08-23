@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 
-import { pauseEvent, stopPropagation, linspace, ensureArray, undoEnsureArray } from './common';
+import {pauseEvent, stopPropagation, linspace, ensureArray, undoEnsureArray} from './common';
 import propTypes from './propTypes';
 
 class Slider extends Component {
@@ -29,8 +29,8 @@ class Slider extends Component {
     const {value, defaultValue} = this.props;
 
     const orValue = this._or(ensureArray(value), ensureArray(defaultValue));
-    const zIndices = orValue.map((_, i) => i);
     const trimmedValue = orValue.map(v => this._trimAlignValue(v, this.props));
+    const zIndices = orValue.map((_, i) => i);
 
     return {
       zIndices,
@@ -47,15 +47,12 @@ class Slider extends Component {
   // Keep the internal `value` consistent with an outside `value` if present.
   // This basically allows the slider to be a controlled component.
   componentWillReceiveProps(newProps) {
-    const propsValue = ensureArray(newProps.value);
-    const newValue = this._or(propsValue, this.state.value);
-    this.state.value = newValue.map(v => this._trimAlignValue(v, newProps));
+    const {value} = this.state;
 
-    // If an upperBound has not yet been determined (due to the component being hidden
-    // during the mount event, or during the last resize), then calculate it now
-    // if (this.state.upperBound === 0) {
-    //   this._handleResize();
-    // }
+    const orValue = this._or(ensureArray(newProps.value), value);
+    const trimmedValue = orValue.map(v => this._trimAlignValue(v, newProps));
+
+    this.setState({value: trimmedValue});
   }
 
   // Check if the arity of `value` or `defaultValue` matches the number of children (= number of custom handles).
@@ -83,32 +80,6 @@ class Slider extends Component {
   getValue() {
     return undoEnsureArray(this.state.value);
   }
-
-  /*
-  _handleResize = () => {
-    // setTimeout of 0 gives element enough time to have assumed its new size if it is being resized
-    setImmediate(() => {
-      const {invert} = this.props;
-      const {slider, handle0} = this.refs;
-
-      const sliderNode = slider.getDOMNode();
-      const handleNode = handle0.getDOMNode();
-      const rect = sliderNode.getBoundingClientRect();
-
-      const sliderMax = rect[this._posMaxKey()];
-      const sliderMin = rect[this._posMinKey()];
-
-      const sizeKey = this._sizeKey();
-
-      this.setState({
-        upperBound: sliderNode[sizeKey] - handleNode[sizeKey],
-        sliderLength: Math.abs(sliderMax - sliderMin),
-        handleSize: handleNode[sizeKey],
-        sliderStart: invert ? sliderMax : sliderMin,
-      });
-    });
-  }
-  */
 
   // calculates the offset of a handle in pixels based on its value.
   _calcOffset = (value) => {
@@ -362,19 +333,19 @@ class Slider extends Component {
   }
 
   _move = (position) => {
+    const {props, state, sliderLength} = this;
+    const {min, max, minDistance, invert} = props;
+    const {index, value, startPosition, startValue} = state;
+
     this.hasMoved = true;
 
-    const { props, state } = this;
-    const { min, max, minDistance, invert, } = props;
-    const { index, value, startPosition, startValue } = state;
-
-    const { length } = value;
+    const {length} = value;
     const oldValue = value[index];
 
     let diffPosition = position - startPosition;
     if (invert) diffPosition *= -1;
 
-    const diffValue = diffPosition / this.sliderLength * (max - min);
+    const diffValue = diffPosition / sliderLength * (max - min);
 
     let newValue = this._trimAlignValue(startValue + diffValue);
 
@@ -619,7 +590,6 @@ class Slider extends Component {
     const {className, disabled, withBars} = this.props;
     const {value} = this.state;
 
-    // const offset = value.map(this._calcOffset);
     const bars = withBars ? this._renderBars(value) : null;
     const handles = this._renderHandles(value);
 

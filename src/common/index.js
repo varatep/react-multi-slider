@@ -30,7 +30,7 @@ export function linspace(min, max, count) {
 // undoEnsureArray(ensureArray(x)) === x
 
 export function ensureArray(x) {
-  if (!x) return [];
+  if (x === null || x === undefined) return [];
   return Array.isArray(x) ? x : [x];
 }
 

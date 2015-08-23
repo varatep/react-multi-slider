@@ -29,7 +29,7 @@ module.exports = {
     }]
   },
   output: {
-    library: 'library-boilerplate',
+    library: 'react-multi-slider',
     libraryTarget: 'umd'
   },
   plugins: plugins,
