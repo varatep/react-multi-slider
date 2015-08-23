@@ -6,8 +6,10 @@ export default class App extends Component {
     return (
       <Slider
         className="horizontal-slider"
-        defaultValue={[0, 100]}
+        defaultValue={[0, 33, 67, 100]}
+        minDistance={10}
         orientation='horizontal'
+        pearling
         withBars
         />
     );

@@ -55,9 +55,9 @@ class Slider extends Component {
 
     // If an upperBound has not yet been determined (due to the component being hidden
     // during the mount event, or during the last resize), then calculate it now
-    if (this.state.upperBound === 0) {
-      this._handleResize();
-    }
+    // if (this.state.upperBound === 0) {
+    //   this._handleResize();
+    // }
   }
 
   // Check if the arity of `value` or `defaultValue` matches the number of children (= number of custom handles).
@@ -82,19 +82,11 @@ class Slider extends Component {
     }
   }
 
-  componentDidMount() {
-    window.addEventListener('resize', this._handleResize);
-    this._handleResize();
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this._handleResize);
-  }
-
   getValue() {
     return undoEnsureArray(this.state.value);
   }
 
+  /*
   _handleResize = () => {
     // setTimeout of 0 gives element enough time to have assumed its new size if it is being resized
     setImmediate(() => {
@@ -118,6 +110,7 @@ class Slider extends Component {
       });
     });
   }
+  */
 
   // calculates the offset of a handle in pixels based on its value.
   _calcOffset = (value) => {
@@ -137,28 +130,36 @@ class Slider extends Component {
     return ratio * (max - min) + min;
   }
 
-  _buildHandleStyle = (offset, i) => {
+  _buildHandleStyle = (value, i) => {
+    const {min, max} = this.props;
     const {index, zIndices} = this.state;
+
     const posMinKey = this._posMinKey();
+    const offset = value / (max - min) * 100;
 
     return {
       position: 'absolute',
       willChange: index >= 0 ? posMinKey : '',
       zIndex: zIndices.indexOf(i) + 1,
-      [posMinKey]: `${offset}px`,
+      [posMinKey]: `${offset}%`,
     };
   }
 
-  _buildBarStyle = (min, max) => {
+  _buildBarStyle = (valueFrom, valueTo) => {
+    const {min, max} = this.props;
     const {index} = this.state;
+
     const posMinKey = this._posMinKey();
     const posMaxKey = this._posMaxKey();
+
+    const posMin = valueFrom / (max - min) * 100;
+    const posMax = valueTo / (max - min) * 100;
 
     return {
       position: 'absolute',
       willChange: index >= 0 ? `${posMinKey}, ${posMaxKey}` : '',
-      [posMinKey]: min,
-      [posMaxKey]: max,
+      [posMinKey]: `${posMin}%`,
+      [posMaxKey]: `${posMax}%`,
     };
   }
 
@@ -258,12 +259,13 @@ class Slider extends Component {
     return e => {
       if (this.props.disabled || e.touches.length > 1) return;
 
-      const position = this._getTouchPosition(e);
+      const positions = this._getTouchPosition(e);
+      const [position] = positions;
 
-      this.startPosition = position;
+      this.startPosition = positions;
       this.isScrolling = undefined; // don't know yet if the user is trying to scroll
 
-      this._start(i, position[0]);
+      this._start(i, position);
       this._addHandlers(this._getTouchEventMap());
 
       stopPropagation(e);
@@ -282,8 +284,26 @@ class Slider extends Component {
     }
   }
 
+  _takeMeasurements = () => {
+    const {invert} = this.props;
+    const {slider} = this.refs;
+
+    const sliderNode = slider.getDOMNode();
+    const rect = sliderNode.getBoundingClientRect();
+
+    const sliderMax = rect[this._posMaxKey()];
+    const sliderMin = rect[this._posMinKey()];
+    const sizeKey = this._sizeKey();
+
+    this.sliderUpperBound = sliderNode[sizeKey];
+    this.sliderLength = Math.abs(sliderMax - sliderMin);
+    this.sliderStart = invert ? sliderMax : sliderMin;
+  }
+
   _start = (index, startPosition) => {
     const {zIndices, value} = this.state;
+
+    this._takeMeasurements();
 
     // if activeElement is body window will lost focus in IE9
     if (document.activeElement && document.activeElement !== document.body) {
@@ -348,17 +368,17 @@ class Slider extends Component {
   _move = (position) => {
     this.hasMoved = true;
 
-    const {props, state} = this;
-    const {min, max, minDistance} = props;
-    const {index, value, startPosition, sliderLength, handleSize, startValue} = state;
+    const { props, state } = this;
+    const { min, max, minDistance, invert, } = props;
+    const { index, value, startPosition, startValue } = state;
 
-    const {length} = value;
+    const { length } = value;
     const oldValue = value[index];
 
     let diffPosition = position - startPosition;
-    if (props.invert) diffPosition *= -1;
+    if (invert) diffPosition *= -1;
 
-    const diffValue = diffPosition / (sliderLength - handleSize) * (max - min);
+    const diffValue = diffPosition / this.sliderLength * (max - min);
 
     let newValue = this._trimAlignValue(startValue + diffValue);
 
@@ -511,10 +531,10 @@ class Slider extends Component {
     );
   }
 
-  _renderHandles = (offset) => {
+  _renderHandles = (value) => {
     const {children} = this.props;
 
-    const styles = offset.map(this._buildHandleStyle);
+    const styles = value.map(this._buildHandleStyle);
 
     if (React.Children.count(children) > 0) {
       return React.Children.forEach(children, (child, i) => this._renderHandle(styles[i], child, i));
@@ -523,12 +543,11 @@ class Slider extends Component {
     return styles.map(((style, i) => this._renderHandle(style, null, i)));
   }
 
-  _renderBar = (i, offsetFrom, offsetTo) => {
-    const {barClassName} = this.props;
-    const {upperBound} = this.state;
+  _renderBar = (i, valueFrom, valueTo) => {
+    const {barClassName, min, max} = this.props;
 
     const className = `${barClassName} ${barClassName}-${i}`;
-    const style = this._buildBarStyle(offsetFrom, upperBound - offsetTo);
+    const style = this._buildBarStyle(valueFrom + min, max - valueTo);
 
     return (
       <div
@@ -540,16 +559,16 @@ class Slider extends Component {
     );
   }
 
-  _renderBars = (offset) => {
-    const {upperBound} = this.state;
+  _renderBars = (value) => {
+    const {min, max} = this.props;
 
-    const lastIndex = offset.length - 1;
+    const lastIndex = value.length - 1;
 
-    const firstBar = this._renderBar(0, 0, offset[0]);
-    const lastBar = this._renderBar(lastIndex + 1, offset[lastIndex], upperBound);
-    const bars = offset
-      .filter((o, i) => i !== lastIndex)
-      .map((o, i) => this._renderBar(i + 1, o, offset[i + 1]));
+    const firstBar = this._renderBar(0, min, value[0]);
+    const lastBar = this._renderBar(lastIndex + 1, value[lastIndex], max);
+    const bars = value
+      .filter((v, i) => i !== lastIndex)
+      .map((v, i) => this._renderBar(i + 1, v, value[i + 1]));
 
     return [firstBar, ...bars, lastBar];
   }
@@ -595,9 +614,9 @@ class Slider extends Component {
     const {className, disabled, withBars} = this.props;
     const {value} = this.state;
 
-    const offset = value.map(this._calcOffset);
-    const bars = withBars ? this._renderBars(offset) : null;
-    const handles = this._renderHandles(offset);
+    // const offset = value.map(this._calcOffset);
+    const bars = withBars ? this._renderBars(value) : null;
+    const handles = this._renderHandles(value);
 
     return (
       <div
