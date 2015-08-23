@@ -8,7 +8,7 @@ const RIGHT_KEY = 39;
 
 const SHIFT_MULTIPLIER = 10;
 
-class Slider extends Component {
+class MultiSlider extends Component {
 
   static propTypes = propTypes
 
@@ -312,7 +312,7 @@ class Slider extends Component {
 
   _onMouseMove = (e) => {
     const [position] = this._getMousePosition(e);
-    this._move(position);
+    this._onMove(position);
   }
 
   _onTouchMove = (e) => {
@@ -334,10 +334,10 @@ class Slider extends Component {
 
     pauseEvent(e);
 
-    this._move(positionMainDir);
+    this._onMove(positionMainDir);
   }
 
-  _move = (position) => {
+  _onMove = (position) => {
     const {props, state, sliderLength} = this;
     const {min, max, invert} = props;
     const {startPosition, startValue} = state;
@@ -349,12 +349,12 @@ class Slider extends Component {
 
     const diffValue = diffPosition / sliderLength * (max - min);
 
-    this._moveToValue(startValue + diffValue);
+    this._move(startValue + diffValue);
   }
 
-  _moveToValue = (toValue) => {
+  _move = (toValue) => {
     const {props, state} = this;
-    const {min, max, minDistance} = props;
+    const {min, max, minDistance, pearling} = props;
     const {index, value} = state;
 
     const {length} = value;
@@ -364,7 +364,7 @@ class Slider extends Component {
 
     // if "pearling" (= handles pushing each other) is disabled,
     // prevent the handle from getting closer than `minDistance` to the previous or next handle.
-    if (!props.pearling) {
+    if (!pearling) {
       if (index > 0) {
         const valueBefore = value[index - 1];
         if (newValue < valueBefore + minDistance) {
@@ -383,7 +383,7 @@ class Slider extends Component {
     value[index] = newValue;
 
     // if "pearling" is enabled, let the current handle push the pre- and succeeding handles.
-    if (props.pearling && length > 1) {
+    if (pearling && length > 1) {
       if (newValue > oldValue) {
         this._pushSucceeding(value, minDistance, index);
         this._trimSucceeding(length, value, minDistance, max);
@@ -523,9 +523,9 @@ class Slider extends Component {
     const {value, index} = this.state;
 
     if (which === RIGHT_KEY) {
-      this._moveToValue(value[index] + (step * shiftKey ? SHIFT_MULTIPLIER : 1));
+      this._move(value[index] + (step * shiftKey ? SHIFT_MULTIPLIER : 1));
     } else if (which === LEFT_KEY) {
-      this._moveToValue(value[index] - (step * shiftKey ? SHIFT_MULTIPLIER : 1));
+      this._move(value[index] - (step * shiftKey ? SHIFT_MULTIPLIER : 1));
     }
   }
 
@@ -639,4 +639,4 @@ class Slider extends Component {
   }
 }
 
-export default Slider;
+export default MultiSlider;

@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-import Slider from '../../../src/index.js';
+import MultiSlider from '../../../src/index.js';
 
 export default class App extends Component {
   render() {
     return (
-      <Slider
+      <MultiSlider
         defaultValue={[0, 33, 67, 100]}
         className="horizontal-slider"
+        minDistance={10}
         pearling
         />
     );
