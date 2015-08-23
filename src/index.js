@@ -3,6 +3,11 @@ import React, {Component} from 'react';
 import {pauseEvent, stopPropagation, linspace, ensureArray, undoEnsureArray} from './common';
 import propTypes from './propTypes';
 
+const LEFT_KEY = 37;
+const RIGHT_KEY = 39;
+
+const SHIFT_MULTIPLIER = 10;
+
 class Slider extends Component {
 
   static propTypes = propTypes
@@ -334,20 +339,28 @@ class Slider extends Component {
 
   _move = (position) => {
     const {props, state, sliderLength} = this;
-    const {min, max, minDistance, invert} = props;
-    const {index, value, startPosition, startValue} = state;
+    const {min, max, invert} = props;
+    const {startPosition, startValue} = state;
 
     this.hasMoved = true;
-
-    const {length} = value;
-    const oldValue = value[index];
 
     let diffPosition = position - startPosition;
     if (invert) diffPosition *= -1;
 
     const diffValue = diffPosition / sliderLength * (max - min);
 
-    let newValue = this._trimAlignValue(startValue + diffValue);
+    this._moveToValue(startValue + diffValue);
+  }
+
+  _moveToValue = (toValue) => {
+    const {props, state} = this;
+    const {min, max, minDistance} = props;
+    const {index, value} = state;
+
+    const {length} = value;
+    const oldValue = value[index];
+
+    let newValue = this._trimAlignValue(toValue);
 
     // if "pearling" (= handles pushing each other) is disabled,
     // prevent the handle from getting closer than `minDistance` to the previous or next handle.
@@ -490,12 +503,30 @@ class Slider extends Component {
         ref={`handle${i}`}
         className={className}
         style={style}
+        tabIndex="0"
+        onFocus={() => this._onFocus(i)}
+        onKeyDown={this._onKeyDown}
         onMouseDown={this._createOnMouseDown(i)}
         onTouchStart={this._createOnTouchStart(i)}
         >
         {child}
       </div>
     );
+  }
+
+  _onFocus = (index) => {
+    this.setState({index});
+  }
+
+  _onKeyDown = ({which, shiftKey}) => {
+    const {step} = this.props;
+    const {value, index} = this.state;
+
+    if (which === RIGHT_KEY) {
+      this._moveToValue(value[index] + (step * shiftKey ? SHIFT_MULTIPLIER : 1));
+    } else if (which === LEFT_KEY) {
+      this._moveToValue(value[index] - (step * shiftKey ? SHIFT_MULTIPLIER : 1));
+    }
   }
 
   _renderHandles = (value) => {
