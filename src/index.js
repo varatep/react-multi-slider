@@ -36,8 +36,6 @@ class Slider extends Component {
       zIndices,
       value: trimmedValue,
       index: -1,
-      upperBound: 0,
-      sliderLength: 0,
     };
   }
 
@@ -114,19 +112,19 @@ class Slider extends Component {
 
   // calculates the offset of a handle in pixels based on its value.
   _calcOffset = (value) => {
+    const {sliderLength} = this;
     const {min, max} = this.props;
-    const {upperBound} = this.state;
 
     const ratio = (value - min) / (max - min);
-    return ratio * upperBound;
+    return ratio * sliderLength;
   }
 
   // calculates the value corresponding to a given pixel offset, i.e. the inverse of `_calcOffset`.
   _calcValue = (offset) => {
+    const {sliderLength} = this;
     const {min, max} = this.props;
-    const {upperBound} = this.state;
 
-    const ratio = offset / upperBound;
+    const ratio = offset / sliderLength;
     return ratio * (max - min) + min;
   }
 
@@ -184,17 +182,15 @@ class Slider extends Component {
 
   _calcOffsetFromPosition = (position) => {
     const {invert} = this.props;
-    const {sliderStart, sliderLength, handleSize} = this.state;
+    const {sliderStart, sliderLength} = this;
 
-    let pixelOffset = position - sliderStart;
-    if (invert) pixelOffset = sliderLength - pixelOffset;
-    pixelOffset -= (handleSize / 2);
+    const pixelOffset = invert ? sliderLength - pixelOffset : position - sliderStart;
 
     return pixelOffset;
   }
 
   // Snaps the nearest handle to the value corresponding to `position` and calls `callback` with that handle's index.
-  _forceValueFromPosition = (position, callback) => {
+  _getValueFromPosition = (position) => {
     const {minDistance} = this.props;
 
     const pixelOffset = this._calcOffsetFromPosition(position);
@@ -206,10 +202,10 @@ class Slider extends Component {
 
     // Prevents the slider from shrinking below `props.minDistance`
     for (let [i] of value.entries()) {
-      if (value[i + 1] - value[i] < minDistance) return;
+      if (value[i + 1] - value[i] < minDistance) return [value, -1];
     }
 
-    this.setState({value}, () => callback(closestIndex));
+    return [value, closestIndex];
   }
 
   _getMousePosition= (e) => {
@@ -416,7 +412,7 @@ class Slider extends Component {
     // Normally you would use `shouldComponentUpdate`, but since the slider is a low-level component,
     // the extra complexity might be worth the extra performance.
     if (newValue !== oldValue) {
-      this.setState({value}, this._fireChangeEvent.bind(this, 'onChange'));
+      this.setState({value}, () => this._fireChangeEvent('onChange'));
     }
   }
 
@@ -580,12 +576,18 @@ class Slider extends Component {
     this.hasMoved = false;
 
     if (!snapDragDisabled) {
+      this._takeMeasurements();
+
       const [position] = this._getMousePosition(e);
-      this._forceValueFromPosition(position, i => {
-        this._fireChangeEvent('onChange');
-        this._start(i, position);
-        this._addHandlers(this._getMouseEventMap());
-      });
+      const [value, closestIndex] = this._getValueFromPosition(position);
+
+      if (closestIndex >= 0) {
+        this.setState({value}, () => {
+          this._fireChangeEvent('onChange');
+          this._start(closestIndex, position);
+          this._addHandlers(this._getMouseEventMap());
+        });
+      }
     }
 
     pauseEvent(e);
@@ -596,8 +598,11 @@ class Slider extends Component {
     if (disabled) return;
 
     if (onSliderClick && !this.hasMoved) {
-      const position = this._getMousePosition(e);
-      const valueAtPos = this._trimAlignValue(this._calcValue(this._calcOffsetFromPosition(position[0])));
+      this._takeMeasurements();
+
+      const [position] = this._getMousePosition(e);
+      const valueAtPos = this._trimAlignValue(this._calcValue(this._calcOffsetFromPosition(position)));
+
       onSliderClick(valueAtPos);
     }
   }
