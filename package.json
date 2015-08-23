@@ -12,7 +12,7 @@
     "test:watch": "NODE_ENV=test mocha --watch",
     "test:cov": "babel-node ./node_modules/.bin/isparta cover ./node_modules/.bin/_mocha",
     "prepublish": "npm run lint && npm run test && npm run clean && npm run build && npm run build:umd",
-    "start": "node ./examples/simple/server.js"
+    "start": "node ./examples/simple/server.js & open http://localhost:3000/examples/simple/index.html"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,7 @@
     "react-component",
     "react",
     "slider",
-    "component",
+    "component"
   ],
   "author": "Florian Klampfer <f.klampfer@gmail.com>",
   "license": "MIT",
