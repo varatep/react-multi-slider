@@ -211,7 +211,7 @@ class MultiSlider extends Component {
       if (disabled) return;
 
       const [position] = this._getMousePosition(e);
-      this._start(i, position);
+      this._onStart(i, position);
       this._addHandlers(this._getMouseEventMap());
 
       pauseEvent(e);
@@ -231,7 +231,7 @@ class MultiSlider extends Component {
       this.startPosition = positions;
       this.isScrolling = undefined; // don't know yet if the user is trying to scroll
 
-      this._start(i, position);
+      this._onStart(i, position);
       this._addHandlers(this._getTouchEventMap());
 
       stopPropagation(e);
@@ -265,7 +265,7 @@ class MultiSlider extends Component {
     this.sliderLength = Math.abs(sliderMax - sliderMin);
   }
 
-  _start = (index, startPosition) => {
+  _onStart = (index, startPosition) => {
     const {zIndices, value} = this.state;
 
     this._takeMeasurements();
@@ -559,7 +559,7 @@ class MultiSlider extends Component {
       if (closestIndex >= 0) {
         this.setState({value}, () => {
           this._fireChangeEvent('onChange');
-          this._start(closestIndex, position);
+          this._onStart(closestIndex, position);
           this._addHandlers(this._getMouseEventMap());
         });
       }
