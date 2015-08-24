@@ -12,6 +12,7 @@ const RIGHT_KEY = 39;
 
 const SHIFT_MULTIPLIER = 10;
 
+// FIXME: split into multiple files? manage state outside of component?
 class MultiSlider extends Component {
 
   static propTypes = propTypes
@@ -72,6 +73,8 @@ class MultiSlider extends Component {
     return {
       zIndices,
       value: trimmedValue,
+
+      // FIXME: allow moving more than one handle at a time
       index: -1,
     };
   }
@@ -480,6 +483,7 @@ class MultiSlider extends Component {
     return val;
   }
 
+  // FIXME: new implementation?
   _alignValue = (val, props) => {
     const {min, step} = props || this.props;
 
