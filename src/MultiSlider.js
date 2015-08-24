@@ -3,8 +3,9 @@ import React, {PropTypes, Component} from 'react';
 import {pauseEvent, stopPropagation, linspace, ensureArray, undoEnsureArray} from './common';
 import propTypes from './propTypes';
 
-import Handles from './Handles.js';
-import Bars from './Bars.js';
+import Handles from './Handles';
+import Bars from './Bars';
+import InputFields from './InputFields';
 
 const LEFT_KEY = 37;
 const RIGHT_KEY = 39;
@@ -31,6 +32,8 @@ class MultiSlider extends Component {
     disabled: false,
     snapDragDisabled: false,
     invert: false,
+    withoutInputFields: false,
+    inputFieldClassName: 'input',
   }
 
   static childContextTypes = {
@@ -39,6 +42,7 @@ class MultiSlider extends Component {
     _onFocus: PropTypes.func,
     _onBlur: PropTypes.func,
     _onKeyDown: PropTypes.func,
+    _move: PropTypes.func,
 
     _posMinKey: PropTypes.func,
     _posMaxKey: PropTypes.func,
@@ -51,6 +55,7 @@ class MultiSlider extends Component {
       _onFocus: this._onFocus,
       _onBlur: this._onBlur,
       _onKeyDown: this._onKeyDown,
+      _move: this._move,
 
       _posMinKey: this._posMinKey,
       _posMaxKey: this._posMaxKey,
@@ -110,7 +115,8 @@ class MultiSlider extends Component {
   }
 
   getValue() {
-    return undoEnsureArray(this.state.value);
+    const {value} = this.state;
+    return undoEnsureArray(value);
   }
 
   // calculates the offset of a handle in pixels based on its value.
@@ -131,7 +137,7 @@ class MultiSlider extends Component {
     return ratio * (max - min) + min;
   }
 
-  _getClosestIndex = (pixelOffset) => {
+  _getClosestIndex = (clickOffset) => {
     const {value} = this.state;
 
     let minDist = Number.MAX_VALUE;
@@ -139,7 +145,7 @@ class MultiSlider extends Component {
 
     for (let [i, v] of value.entries()) {
       const offset = this._calcOffset(v);
-      const dist = Math.abs(pixelOffset - offset);
+      const dist = Math.abs(clickOffset - offset);
 
       if (dist <= minDist) {
         minDist = dist;
@@ -158,15 +164,16 @@ class MultiSlider extends Component {
   _calcValueFromPosition = (position) => {
     const {minDistance} = this.props;
 
-    const pixelOffset = this._calcOffsetFromPosition(position);
-    const nextValue = this._trimAlignValue(this._calcValue(pixelOffset));
+    const clickOffset = this._calcOffsetFromPosition(position);
+    const nextValue = this._trimAlignValue(this._calcValue(clickOffset));
 
     const value = [...this.state.value]; // Clone this.state.value since we'll modify it temporarily
 
-    const closestIndex = this._getClosestIndex(pixelOffset);
+    const closestIndex = this._getClosestIndex(clickOffset);
     value[closestIndex] = nextValue;
 
     // Prevents the slider from shrinking below `props.minDistance`
+    // FIXME: Isn't this implemented already?
     for (let [i] of value.entries()) {
       if (value[i + 1] - value[i] < minDistance) return [value, -1];
     }
@@ -182,7 +189,7 @@ class MultiSlider extends Component {
   }
 
   _getTouchPosition = (e) => {
-    const touch = e.touches[0];
+    const [touch] = e.touches;
     return [
       touch[`page${this._axisKey()}`],
       touch[`page${this._orthogonalAxisKey()}`],
@@ -555,7 +562,6 @@ class MultiSlider extends Component {
       const [position] = this._getMousePosition(e);
       const [value, closestIndex] = this._calcValueFromPosition(position);
 
-
       if (closestIndex >= 0) {
         this.setState({value}, () => {
           this._fireChangeEvent('onChange');
@@ -585,31 +591,50 @@ class MultiSlider extends Component {
   _fireChangeEvent = (eventType) => {
     const {value} = this.state;
     const callback = this.props[eventType];
+
     if (callback) {
       callback(undoEnsureArray(value));
     }
   }
 
+  _renderInputFields = () => {
+    const {name, disabled, inputFieldClassName} = this.props;
+    const {value} = this.state;
+
+    return (
+      <InputFields
+        value={value}
+        name={name}
+        disabled={disabled}
+        inputFieldClassName={inputFieldClassName}
+        />
+    );
+  }
+
   render() {
-    const {className, style, disabled, withBars} = this.props;
+    const {className, style, disabled, withBars, withoutInputFields} = this.props;
 
     const newClassName = className + (disabled ? ' disabled' : '');
     const newStyle = {...style, position: 'relative'};
 
     const bars = withBars ? this._renderBars() : null;
     const handles = this._renderHandles();
+    const inputFields = withoutInputFields ? null : this._renderInputFields();
 
     return (
-      <div
-        ref="slider"
-        className={newClassName}
-        style={newStyle}
-        onMouseDown={this._onSliderMouseDown}
-        onClick={this._onSliderClick}
-        >
-        {bars}
-        {handles}
-      </div>
+      <span>
+        <div
+          ref="slider"
+          className={newClassName}
+          style={newStyle}
+          onMouseDown={this._onSliderMouseDown}
+          onClick={this._onSliderClick}
+          >
+          {bars}
+          {handles}
+        </div>
+        {inputFields}
+      </span>
     );
   }
 }
