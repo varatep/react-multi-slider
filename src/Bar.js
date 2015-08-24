@@ -1,11 +1,11 @@
 import React, {PropTypes, Component} from 'react';
-
-import pureRender from 'pure-render-decorator';
+import shouldPureComponentUpdate from 'react-pure-render/function';
 
 import propTypes from './propTypes';
 
-@pureRender
 class Bar extends Component {
+
+  shouldComponentUpdate = shouldPureComponentUpdate
 
   static propTypes = {
     // TODO: rename
