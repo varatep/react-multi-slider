@@ -259,16 +259,15 @@ class MultiSlider extends Component {
     const {invert} = this.props;
     const {slider} = this.refs;
 
-    const sliderNode = slider.getDOMNode();
-    const rect = sliderNode.getBoundingClientRect();
-
-    const sliderMax = rect[this._posMaxKey()];
-    const sliderMin = rect[this._posMinKey()];
     const sizeKey = this._sizeKey();
+    const directionKey = this._directionKey();
 
-    this.sliderUpperBound = sliderNode[sizeKey];
-    this.sliderLength = Math.abs(sliderMax - sliderMin);
+    const sliderNode = slider.getDOMNode();
+    const sliderMin = sliderNode[`offset${directionKey}`] + sliderNode[`client${directionKey}`];
+    const sliderMax = sliderMin + sliderNode[sizeKey];
+
     this.sliderStart = invert ? sliderMax : sliderMin;
+    this.sliderLength = Math.abs(sliderMax - sliderMin);
   }
 
   _start = (index, startPosition) => {
@@ -462,6 +461,12 @@ class MultiSlider extends Component {
     const {orientation} = this.props;
     if (orientation === 'horizontal') return 'clientWidth';
     if (orientation === 'vertical') return 'clientHeight';
+  }
+
+  _directionKey = () => {
+    const {orientation} = this.props;
+    if (orientation === 'horizontal') return 'Left';
+    if (orientation === 'vertical') return 'Top';
   }
 
   _trimAlignValue = (val, props) => {
