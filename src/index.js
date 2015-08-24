@@ -504,10 +504,11 @@ class MultiSlider extends Component {
         className={className}
         style={style}
         tabIndex="0"
-        onFocus={() => this._onFocus(i)}
-        onKeyDown={this._onKeyDown}
         onMouseDown={this._createOnMouseDown(i)}
         onTouchStart={this._createOnTouchStart(i)}
+        onFocus={() => this._onFocus(i)}
+        onBlur={this._onBlur}
+        onKeyDown={this._onKeyDown}
         >
         {child}
       </div>
@@ -516,6 +517,10 @@ class MultiSlider extends Component {
 
   _onFocus = (index) => {
     this.setState({index});
+  }
+
+  _onBlur = () => {
+    this.setState({index: -1});
   }
 
   _onKeyDown = ({which, shiftKey}) => {
@@ -538,7 +543,7 @@ class MultiSlider extends Component {
       return React.Children.forEach(children, (child, i) => this._renderHandle(styles[i], child, i));
     }
 
-    return styles.map(((style, i) => this._renderHandle(style, null, i)));
+    return styles.map((style, i) => this._renderHandle(style, null, i));
   }
 
   _renderBar = (i, valueFrom, valueTo) => {
@@ -564,6 +569,7 @@ class MultiSlider extends Component {
 
     const firstBar = this._renderBar(0, min, value[0]);
     const lastBar = this._renderBar(lastIndex + 1, value[lastIndex], max);
+
     const bars = value
       .filter((v, i) => i !== lastIndex)
       .map((v, i) => this._renderBar(i + 1, v, value[i + 1]));
@@ -621,14 +627,17 @@ class MultiSlider extends Component {
     const {className, disabled, withBars} = this.props;
     const {value} = this.state;
 
+    const newClassName = className + (disabled ? ' disabled' : '');
+    const style = {position: 'relative'};
+
     const bars = withBars ? this._renderBars(value) : null;
     const handles = this._renderHandles(value);
 
     return (
       <div
         ref="slider"
-        style={{position: 'relative'}}
-        className={className + (disabled ? ' disabled' : '')}
+        className={newClassName}
+        style={style}
         onMouseDown={this._onSliderMouseDown}
         onClick={this._onSliderClick}
         >
