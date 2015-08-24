@@ -87,6 +87,7 @@ class MultiSlider extends Component {
 
   // Keep the internal `value` consistent with an outside `value` if present.
   // This basically allows the slider to be a controlled component.
+  // FIXME: turn into proper controlled component (do nothing unless value prop changes)
   componentWillReceiveProps(newProps) {
     const {value} = this.state;
 
@@ -255,6 +256,7 @@ class MultiSlider extends Component {
     }
   }
 
+  // FIXME: take correct measurements when component is transformed via CSS
   _takeMeasurements = () => {
     const {invert} = this.props;
     const {slider} = this.refs;
