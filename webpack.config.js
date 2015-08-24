@@ -32,6 +32,10 @@ module.exports = {
     library: 'react-multi-slider',
     libraryTarget: 'umd'
   },
+  externals: [
+    {'react': 'React'},
+    {'react/addons': 'React'}
+  ],
   plugins: plugins,
   resolve: {
     extensions: ['', '.js']
