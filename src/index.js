@@ -1,7 +1,10 @@
-import React, {Component} from 'react';
+import React, {PropTypes, Component} from 'react';
 
 import {pauseEvent, stopPropagation, linspace, ensureArray, undoEnsureArray} from './common';
 import propTypes from './propTypes';
+
+import Handles from './Handles.js';
+import Bars from './Bars.js';
 
 const LEFT_KEY = 37;
 const RIGHT_KEY = 39;
@@ -28,6 +31,30 @@ class MultiSlider extends Component {
     disabled: false,
     snapDragDisabled: false,
     invert: false,
+  }
+
+  static childContextTypes = {
+    _createOnMouseDown: PropTypes.func,
+    _createOnTouchStart: PropTypes.func,
+    _onFocus: PropTypes.func,
+    _onBlur: PropTypes.func,
+    _onKeyDown: PropTypes.func,
+
+    _posMinKey: PropTypes.func,
+    _posMaxKey: PropTypes.func,
+  }
+
+  getChildContext() {
+    return {
+      _createOnMouseDown: this._createOnMouseDown,
+      _createOnTouchStart: this._createOnTouchStart,
+      _onFocus: this._onFocus,
+      _onBlur: this._onBlur,
+      _onKeyDown: this._onKeyDown,
+
+      _posMinKey: this._posMinKey,
+      _posMaxKey: this._posMaxKey,
+    };
   }
 
   _getInitialState = () => {
@@ -104,39 +131,6 @@ class MultiSlider extends Component {
     return ratio * (max - min) + min;
   }
 
-  _buildHandleStyle = (value, i) => {
-    const {min, max} = this.props;
-    const {index, zIndices} = this.state;
-
-    const posMinKey = this._posMinKey();
-    const offset = value / (max - min) * 100;
-
-    return {
-      position: 'absolute',
-      willChange: index >= 0 ? posMinKey : '',
-      zIndex: zIndices.indexOf(i) + 1,
-      [posMinKey]: `${offset}%`,
-    };
-  }
-
-  _buildBarStyle = (valueFrom, valueTo) => {
-    const {min, max} = this.props;
-    const {index} = this.state;
-
-    const posMinKey = this._posMinKey();
-    const posMaxKey = this._posMaxKey();
-
-    const posMin = valueFrom / (max - min) * 100;
-    const posMax = valueTo / (max - min) * 100;
-
-    return {
-      position: 'absolute',
-      willChange: index >= 0 ? `${posMinKey}, ${posMaxKey}` : '',
-      [posMinKey]: `${posMin}%`,
-      [posMaxKey]: `${posMax}%`,
-    };
-  }
-
   _getClosestIndex = (pixelOffset) => {
     const {value} = this.state;
 
@@ -170,10 +164,11 @@ class MultiSlider extends Component {
     const {minDistance} = this.props;
 
     const pixelOffset = this._calcOffsetFromPosition(position);
-    const closestIndex = this._getClosestIndex(pixelOffset);
     const nextValue = this._trimAlignValue(this._calcValue(pixelOffset));
 
     const value = [...this.state.value]; // Clone this.state.value since we'll modify it temporarily
+
+    const closestIndex = this._getClosestIndex(pixelOffset);
     value[closestIndex] = nextValue;
 
     // Prevents the slider from shrinking below `props.minDistance`
@@ -216,7 +211,9 @@ class MultiSlider extends Component {
   // create the `mousedown` handler for the i-th handle
   _createOnMouseDown = (i) => {
     return e => {
-      if (this.props.disabled) return;
+      const {disabled} = this.props;
+
+      if (disabled) return;
 
       const [position] = this._getMousePosition(e);
       this._start(i, position);
@@ -229,7 +226,9 @@ class MultiSlider extends Component {
   // create the `touchstart` handler for the i-th handle
   _createOnTouchStart = (i) => {
     return e => {
-      if (this.props.disabled || e.touches.length > 1) return;
+      const {disabled} = this.props;
+
+      if (disabled || e.touches.length > 1) return;
 
       const positions = this._getTouchPosition(e);
       const [position] = positions;
@@ -396,7 +395,8 @@ class MultiSlider extends Component {
     // Normally you would use `shouldComponentUpdate`, but since the slider is a low-level component,
     // the extra complexity might be worth the extra performance.
     if (newValue !== oldValue) {
-      this.setState({value}, () => this._fireChangeEvent('onChange'));
+      // FIXME: better solution around pure render than copying the array?
+      this.setState({value: [...value]}, () => this._fireChangeEvent('onChange'));
     }
   }
 
@@ -490,31 +490,6 @@ class MultiSlider extends Component {
     return parseFloat(alignValue.toFixed(5));
   }
 
-  _renderHandle = (style, child, i) => {
-    const {handleClassName, handleActiveClassName} = this.props;
-    const {index} = this.state;
-
-    const isActive = index === i ? handleActiveClassName : '';
-    const className = `${handleClassName} ${handleClassName}-${i} ${isActive}`;
-
-    return (
-      <div
-        key={`handle-${i}`}
-        ref={`handle${i}`}
-        className={className}
-        style={style}
-        tabIndex="0"
-        onMouseDown={this._createOnMouseDown(i)}
-        onTouchStart={this._createOnTouchStart(i)}
-        onFocus={() => this._onFocus(i)}
-        onBlur={this._onBlur}
-        onKeyDown={this._onKeyDown}
-        >
-        {child}
-      </div>
-    );
-  }
-
   _onFocus = (index) => {
     this.setState({index});
   }
@@ -534,47 +509,38 @@ class MultiSlider extends Component {
     }
   }
 
-  _renderHandles = (value) => {
-    const {children} = this.props;
-
-    const styles = value.map(this._buildHandleStyle);
-
-    if (React.Children.count(children) > 0) {
-      return React.Children.forEach(children, (child, i) => this._renderHandle(styles[i], child, i));
-    }
-
-    return styles.map((style, i) => this._renderHandle(style, null, i));
-  }
-
-  _renderBar = (i, valueFrom, valueTo) => {
-    const {barClassName, min, max} = this.props;
-
-    const className = `${barClassName} ${barClassName}-${i}`;
-    const style = this._buildBarStyle(valueFrom + min, max - valueTo);
+  _renderHandles = () => {
+    const {min, max, handleClassName, handleActiveClassName, children} = this.props;
+    const {value, index, zIndices} = this.state;
 
     return (
-      <div
-        key={`bar-${i}`}
-        ref={`bar${i}`}
-        className={className}
-        style={style}
-        />
+      <Handles
+        value={value}
+        index={index}
+        zIndices={zIndices}
+        min={min}
+        max={max}
+        handleClassName={handleClassName}
+        handleActiveClassName={handleActiveClassName}
+        >
+        {children}
+      </Handles>
     );
   }
 
-  _renderBars = (value) => {
-    const {min, max} = this.props;
+  _renderBars = () => {
+    const {min, max, barClassName} = this.props;
+    const {value, index} = this.state;
 
-    const lastIndex = value.length - 1;
-
-    const firstBar = this._renderBar(0, min, value[0]);
-    const lastBar = this._renderBar(lastIndex + 1, value[lastIndex], max);
-
-    const bars = value
-      .filter((v, i) => i !== lastIndex)
-      .map((v, i) => this._renderBar(i + 1, v, value[i + 1]));
-
-    return [firstBar, ...bars, lastBar];
+    return (
+      <Bars
+        value={value}
+        index={index}
+        min={min}
+        max={max}
+        barClassName={barClassName}
+        />
+    );
   }
 
   _onSliderMouseDown = (e) => {
@@ -624,20 +590,19 @@ class MultiSlider extends Component {
   }
 
   render() {
-    const {className, disabled, withBars} = this.props;
-    const {value} = this.state;
+    const {className, style, disabled, withBars} = this.props;
 
     const newClassName = className + (disabled ? ' disabled' : '');
-    const style = {position: 'relative'};
+    const newStyle = {...style, position: 'relative'};
 
-    const bars = withBars ? this._renderBars(value) : null;
-    const handles = this._renderHandles(value);
+    const bars = withBars ? this._renderBars() : null;
+    const handles = this._renderHandles();
 
     return (
       <div
         ref="slider"
         className={newClassName}
-        style={style}
+        style={newStyle}
         onMouseDown={this._onSliderMouseDown}
         onClick={this._onSliderClick}
         >
