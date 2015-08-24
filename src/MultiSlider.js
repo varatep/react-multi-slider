@@ -25,6 +25,7 @@ class MultiSlider extends Component {
     defaultValue: 0,
     orientation: 'horizontal',
     className: 'slider',
+    style: null,
     handleClassName: 'handle',
     handleActiveClassName: 'active',
     barClassName: 'bar',

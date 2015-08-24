@@ -56,6 +56,11 @@ export default {
   className: PropTypes.string,
 
   /**
+   * Like `className`, but using React inlne styles.
+   */
+  style: PropTypes.object,
+
+  /**
    * The css class set on each handle node.
    *
    * In addition each handle will receive a numbered css class of the form `${handleClassName}-${i}`,
@@ -117,8 +122,20 @@ export default {
   onAfterChange: PropTypes.func,
 
   /**
-   *  Callback called when the the slider is clicked (handle or bars).
-   *  Receives the value at the clicked position as argument.
+   * Callback called when the the slider is clicked (handle or bars).
+   * Receives the value at the clicked position as argument.
    */
   onSliderClick: PropTypes.func,
+
+  /**
+   * No <input/> fields will be rendered if this flag is set.
+   * Without the <input/> elements the slider will not work as part of a <form/>.
+   */
+  withoutInputFields: PropTypes.bool,
+
+  /**
+   * CSS class for the <input/> fields.
+   * Most likely you want to use this to make them invisible.
+   */
+  inputFieldClassName: PropTypes.string,
 };
