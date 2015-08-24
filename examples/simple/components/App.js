@@ -16,6 +16,7 @@ export default class App extends Component {
     return (
       <MultiSlider
         className="horizontal-slider"
+        orientation="horizontal"
         value={value}
         minDistance={10}
         onChange={this.onChange}

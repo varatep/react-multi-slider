@@ -151,16 +151,11 @@ class MultiSlider extends Component {
   }
 
   _calcOffsetFromPosition = (position) => {
-    const {invert} = this.props;
-    const {sliderStart, sliderLength} = this;
-
-    const pixelOffset = invert ? sliderLength - pixelOffset : position - sliderStart;
-
-    return pixelOffset;
+    const {sliderStart} = this;
+    return Math.abs(position - sliderStart);
   }
 
-  // Snaps the nearest handle to the value corresponding to `position` and calls `callback` with that handle's index.
-  _getValueFromPosition = (position) => {
+  _calcValueFromPosition = (position) => {
     const {minDistance} = this.props;
 
     const pixelOffset = this._calcOffsetFromPosition(position);
@@ -558,7 +553,8 @@ class MultiSlider extends Component {
       this._takeMeasurements();
 
       const [position] = this._getMousePosition(e);
-      const [value, closestIndex] = this._getValueFromPosition(position);
+      const [value, closestIndex] = this._calcValueFromPosition(position);
+
 
       if (closestIndex >= 0) {
         this.setState({value}, () => {
