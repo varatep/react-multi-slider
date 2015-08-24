@@ -213,10 +213,6 @@ class MultiSlider extends Component {
   // create the `mousedown` handler for the i-th handle
   _createOnMouseDown = (i) => {
     return e => {
-      const {disabled} = this.props;
-
-      if (disabled) return;
-
       const [position] = this._getMousePosition(e);
       this._onStart(i, position);
       this._addHandlers(this._getMouseEventMap());
@@ -228,9 +224,7 @@ class MultiSlider extends Component {
   // create the `touchstart` handler for the i-th handle
   _createOnTouchStart = (i) => {
     return e => {
-      const {disabled} = this.props;
-
-      if (disabled || e.touches.length > 1) return;
+      if (e.touches.length > 1) return;
 
       const positions = this._getTouchPosition(e);
       const [position] = positions;
@@ -354,8 +348,10 @@ class MultiSlider extends Component {
 
   _move = (toValue) => {
     const {props, state} = this;
-    const {min, max, minDistance, pearling} = props;
+    const {min, max, minDistance, pearling, disabled} = props;
     const {index, value} = state;
+
+    if (disabled) return;
 
     const {length} = value;
     const oldValue = value[index];
@@ -517,7 +513,7 @@ class MultiSlider extends Component {
   }
 
   _renderHandles = () => {
-    const {min, max, handleClassName, handleActiveClassName, children} = this.props;
+    const {min, max, handleClassName, handleActiveClassName, disabled, children} = this.props;
     const {value, index, zIndices} = this.state;
 
     return (
@@ -529,6 +525,7 @@ class MultiSlider extends Component {
         max={max}
         handleClassName={handleClassName}
         handleActiveClassName={handleActiveClassName}
+        disabled={disabled}
         >
         {children}
       </Handles>
@@ -551,8 +548,7 @@ class MultiSlider extends Component {
   }
 
   _onSliderMouseDown = (e) => {
-    const {disabled, snapDragDisabled} = this.props;
-    if (disabled) return;
+    const {snapDragDisabled} = this.props;
 
     this.hasMoved = false;
 
@@ -575,8 +571,7 @@ class MultiSlider extends Component {
   }
 
   _onSliderClick = (e) => {
-    const {disabled, onSliderClick} = this.props;
-    if (disabled) return;
+    const {onSliderClick} = this.props;
 
     if (onSliderClick && !this.hasMoved) {
       this._takeMeasurements();
@@ -627,8 +622,8 @@ class MultiSlider extends Component {
           ref="slider"
           className={newClassName}
           style={newStyle}
-          onMouseDown={this._onSliderMouseDown}
-          onClick={this._onSliderClick}
+          onMouseDown={disabled ? null : this._onSliderMouseDown}
+          onClick={disabled ? null : this._onSliderClick}
           >
           {bars}
           {handles}

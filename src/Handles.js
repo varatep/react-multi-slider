@@ -38,7 +38,7 @@ class Handles extends Component {
   }
 
   _renderHandle = (child, v, i) => {
-    const {index, handleClassName, handleActiveClassName, zIndices, min, max} = this.props;
+    const {index, handleClassName, handleActiveClassName, zIndices, min, max, disabled} = this.props;
 
     return (
       <Handle
@@ -51,6 +51,7 @@ class Handles extends Component {
         max={max}
         handleClassName={handleClassName}
         handleActiveClassName={handleActiveClassName}
+        disabled={disabled}
         >
         {child}
       </Handle>

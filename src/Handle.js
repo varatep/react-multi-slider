@@ -35,7 +35,7 @@ class Handle extends Component {
   }
 
   render() {
-    const {i, index, handleClassName, handleActiveClassName, children} = this.props;
+    const {i, index, handleClassName, handleActiveClassName, disabled, children} = this.props;
     const {_createOnMouseDown, _createOnTouchStart, _onFocus, _onBlur, _onKeyDown} = this.context;
 
     // console.log(`Render handle ${i}`);
@@ -49,12 +49,12 @@ class Handle extends Component {
       <div
         className={className}
         style={style}
-        tabIndex="0"
-        onMouseDown={_createOnMouseDown(i)}
-        onTouchStart={_createOnTouchStart(i)}
-        onFocus={() => _onFocus(i)}
-        onBlur={_onBlur}
-        onKeyDown={_onKeyDown}
+        tabIndex={disabled ? null : '0'}
+        onMouseDown={disabled ? null : _createOnMouseDown(i)}
+        onTouchStart={disabled ? null : _createOnTouchStart(i)}
+        onFocus={disabled ? null : () => _onFocus(i)}
+        onBlur={disabled ? null : _onBlur}
+        onKeyDown={disabled ? null : _onKeyDown}
         >
         {children}
       </div>
