@@ -91,22 +91,6 @@ class Handle extends Component {
     };
   }
 
-  // FIXME: make "static"?
-  _getMouseEventMap = () => {
-    return [
-      ['mousemove', this._onMouseMove],
-      ['mouseup', this._onMouseUp],
-    ];
-  }
-
-  // FIXME: make "static"?
-  _getTouchEventMap = () => {
-    return [
-      ['touchmove', this._onTouchMove],
-      ['touchend', this._onTouchEnd],
-    ];
-  }
-
   _getMousePosition= (e) => {
     const {_axisKey, _orthogonalAxisKey} = this.context;
 
@@ -128,14 +112,17 @@ class Handle extends Component {
     ];
   }
 
+  // start onStart
   _onMouseDown = (e) => {
     const {i} = this.props;
 
     const [position] = this._getMousePosition(e);
-    this._onStart(i, position);
-    addHandlers(this._getMouseEventMap());
+
+    addHandlers(this._mouseEventMap);
 
     pauseEvent(e);
+
+    this._onStart(i, position);
   }
 
   _onTouchStart = (e) => {
@@ -147,14 +134,86 @@ class Handle extends Component {
     const positions = this._getTouchPosition(e);
     const [position] = positions;
 
-    this.startPosition = positions;
-    this.isScrolling = undefined; // don't know yet if the user is trying to scroll
+    this._startPositions = positions;
+    this._isScrolling = undefined; // don't know yet if the user is trying to scroll
 
-    this._onStart(i, position);
-    addHandlers(this._getTouchEventMap());
+    addHandlers(this._touchEventMap);
 
     stopPropagation(e);
+
+    this._onStart(i, position, e);
   }
+
+  _onStart = (i, position, e) => {
+    if (this.onStart) this.onStart(e);
+  }
+  // end onStart
+
+  // being onMove
+  _onMouseMove = (e) => {
+    const [position] = this._getMousePosition(e);
+    this._onMove(position);
+  }
+
+  _onTouchMove = (e) => {
+    if (e.touches.length > 1) return;
+
+    const [positionMainDir, positionScrollDir] = this._getTouchPosition(e);
+    const [startPositionMainDir, startPositionScrollDir] = this._startPositions;
+
+    if (typeof this._isScrolling === 'undefined') {
+      const diffMainDir = positionMainDir - startPositionMainDir;
+      const diffScrollDir = positionScrollDir - startPositionScrollDir;
+      this._isScrolling = Math.abs(diffScrollDir) > Math.abs(diffMainDir);
+    }
+
+    if (this._isScrolling) {
+      // this.setState({index: -1});
+      return;
+    }
+
+    pauseEvent(e);
+
+    this._onMove(positionMainDir, e);
+  }
+
+  _onMove = (position, e) => {
+    if (this.onMove) this.onMove(e);
+  }
+
+  _onMouseUp = (e) => {
+    this._onEnd(this._mouseEventMap, e);
+  }
+  // end onMove
+
+  // being onEnd
+  _onTouchEnd = (e) => {
+    this._onEnd(this._touchEventMap, e);
+  }
+
+  _onEnd = (eventMap, e) => {
+    removeHandlers(this._touchEventMap);
+
+    if (this.onEnd) this.onEnd(e);
+  }
+  // end onEnd
+
+  _getMouseEventMap = () => {
+    return [
+      ['mousemove', this._onMouseMove],
+      ['mouseup', this._onMouseUp],
+    ];
+  }
+
+  _getTouchEventMap = () => {
+    return [
+      ['touchmove', this._onTouchMove],
+      ['touchend', this._onTouchEnd],
+    ];
+  }
+
+  _mouseEventMap = this._getMouseEventMap()
+  _touchEventMap = this._getTouchEventMap()
 }
 
 export default Handle;
