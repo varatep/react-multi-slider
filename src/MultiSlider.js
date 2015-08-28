@@ -48,6 +48,8 @@ class MultiSlider extends Component {
 
     _posMinKey: PropTypes.func,
     _posMaxKey: PropTypes.func,
+    _axisKey: PropTypes.func,
+    _orthogonalAxisKey: PropTypes.func,
   }
 
   getChildContext() {
@@ -61,6 +63,8 @@ class MultiSlider extends Component {
 
       _posMinKey: this._posMinKey,
       _posMaxKey: this._posMaxKey,
+      _axisKey: this._axisKey,
+      _orthogonalAxisKey: this._orthogonalAxisKey,
     };
   }
 

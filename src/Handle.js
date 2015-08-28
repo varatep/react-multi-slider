@@ -1,7 +1,20 @@
 import React, {PropTypes, Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
+import {pauseEvent, stopPropagation} from './common';
 import propTypes from './propTypes';
+
+function addHandlers(eventMap) {
+  for (let [key, func] of eventMap) {
+    document.addEventListener(key, func, false);
+  }
+}
+
+function removeHandlers(eventMap) {
+  for (let [key, func] of eventMap) {
+    document.removeEventListener(key, func, false);
+  }
+}
 
 class Handle extends Component {
 
@@ -10,7 +23,7 @@ class Handle extends Component {
   static propTypes = {
     v: PropTypes.number,
 
-    // index of this bar
+    // index of this handle
     i: PropTypes.number,
 
     // crrently selected index
@@ -32,6 +45,8 @@ class Handle extends Component {
     _onKeyDown: PropTypes.func,
 
     _posMinKey: PropTypes.func,
+    _axisKey: PropTypes.func,
+    _orthogonalAxisKey: PropTypes.func,
   }
 
   render() {
@@ -74,6 +89,71 @@ class Handle extends Component {
       willChange: index >= 0 ? posMinKey : '',
       [posMinKey]: `${offset}%`,
     };
+  }
+
+  // FIXME: make "static"?
+  _getMouseEventMap = () => {
+    return [
+      ['mousemove', this._onMouseMove],
+      ['mouseup', this._onMouseUp],
+    ];
+  }
+
+  // FIXME: make "static"?
+  _getTouchEventMap = () => {
+    return [
+      ['touchmove', this._onTouchMove],
+      ['touchend', this._onTouchEnd],
+    ];
+  }
+
+  _getMousePosition= (e) => {
+    const {_axisKey, _orthogonalAxisKey} = this.context;
+
+    return [
+      e[`page${_axisKey()}`],
+      e[`page${_orthogonalAxisKey()}`],
+    ];
+  }
+
+  _getTouchPosition = (e) => {
+    const {_axisKey, _orthogonalAxisKey} = this.context;
+
+    // TODO: use closest touch
+    const [touch] = e.touches;
+
+    return [
+      touch[`page${_axisKey()}`],
+      touch[`page${_orthogonalAxisKey()}`],
+    ];
+  }
+
+  _onMouseDown = (e) => {
+    const {i} = this.props;
+
+    const [position] = this._getMousePosition(e);
+    this._onStart(i, position);
+    addHandlers(this._getMouseEventMap());
+
+    pauseEvent(e);
+  }
+
+  _onTouchStart = (e) => {
+    const {i} = this.props;
+
+    // TODO: remove when todo above is implemented
+    if (e.touches.length > 1) return;
+
+    const positions = this._getTouchPosition(e);
+    const [position] = positions;
+
+    this.startPosition = positions;
+    this.isScrolling = undefined; // don't know yet if the user is trying to scroll
+
+    this._onStart(i, position);
+    addHandlers(this._getTouchEventMap());
+
+    stopPropagation(e);
   }
 }
 
