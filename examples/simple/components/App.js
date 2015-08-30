@@ -19,8 +19,11 @@ export default class App extends Component {
           name="name"
           className="horizontal-slider"
           orientation="horizontal"
+          min={0}
+          max={1}
+          step={0.01}
           value={value}
-          minDistance={10}
+          minDistance={0.1}
           onChange={this.onChange}
           withBars
           pearling

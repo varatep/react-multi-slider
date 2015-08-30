@@ -4,6 +4,8 @@ import shouldPureComponentUpdate from 'react-pure-render/function';
 import {pauseEvent, stopPropagation} from './common';
 import propTypes from './propTypes';
 
+const SHIFT_MULTIPLIER = 10;
+
 function addHandlers(eventMap) {
   for (let [key, func] of eventMap) {
     document.addEventListener(key, func, false);
@@ -35,6 +37,9 @@ class Handle extends Component {
   }
 
   static contextTypes = {
+    invert: PropTypes.bool,
+    step: PropTypes.number,
+
     _start: PropTypes.func,
     _move: PropTypes.func,
     _end: PropTypes.func,
@@ -44,8 +49,8 @@ class Handle extends Component {
     _posMinKey: PropTypes.func,
     _axisKey: PropTypes.func,
     _orthogonalAxisKey: PropTypes.func,
-
-    invert: PropTypes.bool,
+    _incKey: PropTypes.func,
+    _decKey: PropTypes.func,
   }
 
   state = {active: false}
@@ -68,7 +73,7 @@ class Handle extends Component {
         tabIndex={disabled ? null : '0'}
         onMouseDown={disabled ? null : this._onMouseDown}
         onTouchStart={disabled ? null : this._onTouchStart}
-        onFocus={disabled ? null : () => this._onFocus(i)}
+        onFocus={disabled ? null : this._onFocus}
         onBlur={disabled ? null : this._onBlur}
         onKeyDown={disabled ? null : this._onKeyDown}
         >
@@ -201,6 +206,12 @@ class Handle extends Component {
     const {v, i} = this.props;
     const {_measureSliderLength, _start} = this.context;
 
+    // TODO: find out if necessary with tabindex
+    // if activeElement is body window will lost focus in IE9
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+
     this._startValue = v;
     this._startPosition = position;
     this._sliderLength = _measureSliderLength();
@@ -234,15 +245,33 @@ class Handle extends Component {
   }
 
   _onFocus = () => {
+    const {i} = this.props;
+    const {_start} = this.context;
+
     this.setState({active: true});
+
+    _start(i);
   }
 
   _onBlur = () => {
+    const {_end} = this.context;
+
     this.setState({active: false});
+
+    _end();
   }
 
-  _onKeyDown = () => {
-    // FIXME: call _move with correct values
+  _onKeyDown = ({which, shiftKey}) => {
+    const {v, i} = this.props;
+    const {step, _incKey, _decKey, _move} = this.context;
+
+    const diffValue = step * (shiftKey ? SHIFT_MULTIPLIER : 1);
+
+    if (which === _incKey()) {
+      _move(i, v + diffValue);
+    } else if (which === _decKey()) {
+      _move(i, v - diffValue);
+    }
   }
 
   _getMouseEventMap = () => {

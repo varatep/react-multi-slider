@@ -12,8 +12,6 @@ const UP_KEY = 38;
 const RIGHT_KEY = 39;
 const DOWN_KEY = 40;
 
-// const SHIFT_MULTIPLIER = 10;
-
 // FIXME: split into multiple files? manage state outside of component?
 class MultiSlider extends Component {
 
@@ -41,6 +39,9 @@ class MultiSlider extends Component {
   }
 
   static childContextTypes = {
+    invert: PropTypes.bool,
+    step: PropTypes.number,
+
     _onFocus: PropTypes.func,
     _onBlur: PropTypes.func,
     _onKeyDown: PropTypes.func,
@@ -55,12 +56,17 @@ class MultiSlider extends Component {
     _posMaxKey: PropTypes.func,
     _axisKey: PropTypes.func,
     _orthogonalAxisKey: PropTypes.func,
-
-    invert: PropTypes.bool,
+    _incKey: PropTypes.func,
+    _decKey: PropTypes.func,
   }
 
   getChildContext() {
+    const {invert, step} = this.props;
+
     return {
+      invert,
+      step,
+
       // state management
       _start: this._start,
       _move: this._move,
@@ -74,8 +80,8 @@ class MultiSlider extends Component {
       _posMaxKey: this._posMaxKey,
       _axisKey: this._axisKey,
       _orthogonalAxisKey: this._orthogonalAxisKey,
-
-      invert: this.props.invert,
+      _incKey: this._incKey,
+      _decKey: this._decKey,
     };
   }
 
@@ -201,39 +207,6 @@ class MultiSlider extends Component {
     return [value, closestIndex];
   }
 
-  /*
-  _getMousePosition= (e) => {
-    return [
-      e[`page${this._axisKey()}`],
-      e[`page${this._orthogonalAxisKey()}`],
-    ];
-  }
-
-  _getTouchPosition = (e) => {
-    const [touch] = e.touches;
-    return [
-      touch[`page${this._axisKey()}`],
-      touch[`page${this._orthogonalAxisKey()}`],
-    ];
-  }
-  */
-
-  /*
-  _getMouseEventMap = () => {
-    return [
-      ['mousemove', this._onMouseMove],
-      ['mouseup', this._onMouseUp],
-    ];
-  }
-
-  _getTouchEventMap = () => {
-    return [
-      ['touchmove', this._onTouchMove],
-      ['touchend', this._onTouchEnd],
-    ];
-  }
-  */
-
   // FIXME: take correct measurements when component is transformed via CSS
   _measureSliderLength = () => {
     const {slider} = this.refs;
@@ -251,12 +224,6 @@ class MultiSlider extends Component {
 
   _start = (index) => {
     const {zIndices} = this.state;
-
-    // TODO: find out if necessary with tabindex
-    // if activeElement is body window will lost focus in IE9
-    if (document.activeElement && document.activeElement !== document.body) {
-      document.activeElement.blur();
-    }
 
     this._hasMoved = false;
 
@@ -435,29 +402,6 @@ class MultiSlider extends Component {
 
     return parseFloat(alignValue.toFixed(5));
   }
-
-  /*
-  _onFocus = (index) => {
-    this.setState({index});
-  }
-
-  _onBlur = () => {
-    this.setState({index: -1});
-  }
-  */
-
-  /*
-  _onKeyDown = ({which, shiftKey}) => {
-    const {step} = this.props;
-    const {value, index} = this.state;
-
-    if (which === this._incKey()) {
-      this._move(index, value[index] + (step * shiftKey ? SHIFT_MULTIPLIER : 1));
-    } else if (which === this._decKey()) {
-      this._move(index, value[index] - (step * shiftKey ? SHIFT_MULTIPLIER : 1));
-    }
-  }
-  */
 
   _renderHandles = () => {
     const {min, max, handleClassName, handleActiveClassName, disabled, children} = this.props;
