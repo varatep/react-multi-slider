@@ -1,6 +1,6 @@
 import React, {PropTypes, Component} from 'react';
 
-import {pauseEvent, stopPropagation, linspace, ensureArray, undoEnsureArray} from './common';
+import {linspace, ensureArray, undoEnsureArray} from './common';
 import propTypes from './propTypes';
 
 import Handles from './Handles';
@@ -8,9 +8,11 @@ import Bars from './Bars';
 import InputFields from './InputFields';
 
 const LEFT_KEY = 37;
+const UP_KEY = 38;
 const RIGHT_KEY = 39;
+const DOWN_KEY = 40;
 
-const SHIFT_MULTIPLIER = 10;
+// const SHIFT_MULTIPLIER = 10;
 
 // FIXME: split into multiple files? manage state outside of component?
 class MultiSlider extends Component {
@@ -39,32 +41,41 @@ class MultiSlider extends Component {
   }
 
   static childContextTypes = {
-    _createOnMouseDown: PropTypes.func,
-    _createOnTouchStart: PropTypes.func,
     _onFocus: PropTypes.func,
     _onBlur: PropTypes.func,
     _onKeyDown: PropTypes.func,
+
+    _start: PropTypes.func,
     _move: PropTypes.func,
+    _end: PropTypes.func,
+
+    _measureSliderLength: PropTypes.func,
 
     _posMinKey: PropTypes.func,
     _posMaxKey: PropTypes.func,
     _axisKey: PropTypes.func,
     _orthogonalAxisKey: PropTypes.func,
+
+    invert: PropTypes.bool,
   }
 
   getChildContext() {
     return {
-      _createOnMouseDown: this._createOnMouseDown,
-      _createOnTouchStart: this._createOnTouchStart,
-      _onFocus: this._onFocus,
-      _onBlur: this._onBlur,
-      _onKeyDown: this._onKeyDown,
+      // state management
+      _start: this._start,
       _move: this._move,
+      _end: this._end,
 
+      // measurement methods
+      _measureSliderLength: this._measureSliderLength,
+
+      // orientation methods
       _posMinKey: this._posMinKey,
       _posMaxKey: this._posMaxKey,
       _axisKey: this._axisKey,
       _orthogonalAxisKey: this._orthogonalAxisKey,
+
+      invert: this.props.invert,
     };
   }
 
@@ -190,6 +201,7 @@ class MultiSlider extends Component {
     return [value, closestIndex];
   }
 
+  /*
   _getMousePosition= (e) => {
     return [
       e[`page${this._axisKey()}`],
@@ -204,7 +216,9 @@ class MultiSlider extends Component {
       touch[`page${this._orthogonalAxisKey()}`],
     ];
   }
+  */
 
+  /*
   _getMouseEventMap = () => {
     return [
       ['mousemove', this._onMouseMove],
@@ -218,149 +232,51 @@ class MultiSlider extends Component {
       ['touchend', this._onTouchEnd],
     ];
   }
-
-  // create the `mousedown` handler for the i-th handle
-  _createOnMouseDown = (i) => {
-    return e => {
-      const [position] = this._getMousePosition(e);
-      this._onStart(i, position);
-      this._addHandlers(this._getMouseEventMap());
-
-      pauseEvent(e);
-    };
-  }
-
-  // create the `touchstart` handler for the i-th handle
-  _createOnTouchStart = (i) => {
-    return e => {
-      if (e.touches.length > 1) return;
-
-      const positions = this._getTouchPosition(e);
-      const [position] = positions;
-
-      this.startPosition = positions;
-      this.isScrolling = undefined; // don't know yet if the user is trying to scroll
-
-      this._onStart(i, position);
-      this._addHandlers(this._getTouchEventMap());
-
-      stopPropagation(e);
-    };
-  }
-
-  _addHandlers = (eventMap) => {
-    for (let [key, func] of eventMap) {
-      document.addEventListener(key, func, false);
-    }
-  }
-
-  _removeHandlers = (eventMap) => {
-    for (let [key, func] of eventMap) {
-      document.removeEventListener(key, func, false);
-    }
-  }
+  */
 
   // FIXME: take correct measurements when component is transformed via CSS
-  _takeMeasurements = () => {
-    const {invert} = this.props;
+  _measureSliderLength = () => {
     const {slider} = this.refs;
 
     const sizeKey = this._sizeKey();
     const directionKey = this._directionKey();
 
     const sliderNode = slider.getDOMNode();
+
     const sliderMin = sliderNode[`offset${directionKey}`] + sliderNode[`client${directionKey}`];
     const sliderMax = sliderMin + sliderNode[sizeKey];
 
-    this.sliderStart = invert ? sliderMax : sliderMin;
-    this.sliderLength = Math.abs(sliderMax - sliderMin);
+    return Math.abs(sliderMax - sliderMin);
   }
 
-  _onStart = (index, startPosition) => {
-    const {zIndices, value} = this.state;
+  _start = (index) => {
+    const {zIndices} = this.state;
 
-    this._takeMeasurements();
-
+    // TODO: find out if necessary with tabindex
     // if activeElement is body window will lost focus in IE9
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
     }
 
-    this.hasMoved = false;
-
-    this._fireChangeEvent('onBeforeChange');
+    this._hasMoved = false;
 
     zIndices.splice(zIndices.indexOf(index), 1); // remove wherever the element is
     zIndices.push(index); // add to end
 
-    this.setState({
-      index,
-      zIndices,
-      startPosition,
-      startValue: value[index],
-    });
+    this._fireChangeEvent('onBeforeChange');
+
+    this.setState({zIndices: [...zIndices]});
   }
 
-  _onMouseUp = () => {
-    this._onEnd(this._getMouseEventMap());
-  }
+  _move = (index, toValue) => {
+    const {min, max, minDistance, pearling, disabled} = this.props;
+    const {value} = this.state;
 
-  _onTouchEnd = () => {
-    this._onEnd(this._getTouchEventMap());
-  }
+    this._hasMoved = true;
 
-  _onEnd = (eventMap) => {
-    this._removeHandlers(eventMap);
-    this.setState({index: -1}, () => this._fireChangeEvent('onAfterChange'));
-  }
-
-  _onMouseMove = (e) => {
-    const [position] = this._getMousePosition(e);
-    this._onMove(position);
-  }
-
-  _onTouchMove = (e) => {
-    if (e.touches.length > 1) return;
-
-    const [positionMainDir, positionScrollDir] = this._getTouchPosition(e);
-    const [startPositionMainDir, startPositionScrollDir] = this.startPosition;
-
-    if (typeof this.isScrolling === 'undefined') {
-      const diffMainDir = positionMainDir - startPositionMainDir;
-      const diffScrollDir = positionScrollDir - startPositionScrollDir;
-      this.isScrolling = Math.abs(diffScrollDir) > Math.abs(diffMainDir);
-    }
-
-    if (this.isScrolling) {
-      this.setState({index: -1});
-      return;
-    }
-
-    pauseEvent(e);
-
-    this._onMove(positionMainDir);
-  }
-
-  _onMove = (position) => {
-    const {props, state, sliderLength} = this;
-    const {min, max, invert} = props;
-    const {startPosition, startValue} = state;
-
-    this.hasMoved = true;
-
-    let diffPosition = position - startPosition;
-    if (invert) diffPosition *= -1;
-
-    const diffValue = diffPosition / sliderLength * (max - min);
-
-    this._move(startValue + diffValue);
-  }
-
-  _move = (toValue) => {
-    const {props, state} = this;
-    const {min, max, minDistance, pearling, disabled} = props;
-    const {index, value} = state;
-
+    // TODO: remove, ensure _move is not called when slider is disabled
+    // The reason is that event handlers can have other effect as well and therefore need to be disabled anyway,
+    // so checking here again is probably redundant.
     if (disabled) return;
 
     const {length} = value;
@@ -405,6 +321,10 @@ class MultiSlider extends Component {
       // FIXME: better solution around pure render than copying the array?
       this.setState({value: [...value]}, () => this._fireChangeEvent('onChange'));
     }
+  }
+
+  _end = () => {
+    this._fireChangeEvent('onAfterChange');
   }
 
   _pushSucceeding = (value, minDistance, index) => {
@@ -477,6 +397,18 @@ class MultiSlider extends Component {
     if (orientation === 'vertical') return 'Top';
   }
 
+  _incKey = () => {
+    const {orientation, invert} = this.props;
+    if (orientation === 'horizontal') return invert ? LEFT_KEY : RIGHT_KEY;
+    if (orientation === 'vertical') return invert ? UP_KEY : DOWN_KEY;
+  }
+
+  _decKey = () => {
+    const {orientation, invert} = this.props;
+    if (orientation === 'horizontal') return invert ? RIGHT_KEY : LEFT_KEY;
+    if (orientation === 'vertical') return invert ? DOWN_KEY : UP_KEY;
+  }
+
   _trimAlignValue = (val, props) => {
     return this._alignValue(this._trimValue(val, props), props);
   }
@@ -504,6 +436,7 @@ class MultiSlider extends Component {
     return parseFloat(alignValue.toFixed(5));
   }
 
+  /*
   _onFocus = (index) => {
     this.setState({index});
   }
@@ -511,26 +444,28 @@ class MultiSlider extends Component {
   _onBlur = () => {
     this.setState({index: -1});
   }
+  */
 
+  /*
   _onKeyDown = ({which, shiftKey}) => {
     const {step} = this.props;
     const {value, index} = this.state;
 
-    if (which === RIGHT_KEY) {
-      this._move(value[index] + (step * shiftKey ? SHIFT_MULTIPLIER : 1));
-    } else if (which === LEFT_KEY) {
-      this._move(value[index] - (step * shiftKey ? SHIFT_MULTIPLIER : 1));
+    if (which === this._incKey()) {
+      this._move(index, value[index] + (step * shiftKey ? SHIFT_MULTIPLIER : 1));
+    } else if (which === this._decKey()) {
+      this._move(index, value[index] - (step * shiftKey ? SHIFT_MULTIPLIER : 1));
     }
   }
+  */
 
   _renderHandles = () => {
     const {min, max, handleClassName, handleActiveClassName, disabled, children} = this.props;
-    const {value, index, zIndices} = this.state;
+    const {value, zIndices} = this.state;
 
     return (
       <Handles
         value={value}
-        index={index}
         zIndices={zIndices}
         min={min}
         max={max}
@@ -545,12 +480,11 @@ class MultiSlider extends Component {
 
   _renderBars = () => {
     const {min, max, barClassName} = this.props;
-    const {value, index} = this.state;
+    const {value} = this.state;
 
     return (
       <Bars
         value={value}
-        index={index}
         min={min}
         max={max}
         barClassName={barClassName}
@@ -558,10 +492,11 @@ class MultiSlider extends Component {
     );
   }
 
+  /*
   _onSliderMouseDown = (e) => {
     const {snapDragDisabled} = this.props;
 
-    this.hasMoved = false;
+    this._hasMoved = false;
 
     if (!snapDragDisabled) {
       this._takeMeasurements();
@@ -584,7 +519,7 @@ class MultiSlider extends Component {
   _onSliderClick = (e) => {
     const {onSliderClick} = this.props;
 
-    if (onSliderClick && !this.hasMoved) {
+    if (onSliderClick && !this._hasMoved) {
       this._takeMeasurements();
 
       const [position] = this._getMousePosition(e);
@@ -593,6 +528,7 @@ class MultiSlider extends Component {
       onSliderClick(valueAtPos);
     }
   }
+  */
 
   _fireChangeEvent = (eventType) => {
     const {value} = this.state;
@@ -628,19 +564,19 @@ class MultiSlider extends Component {
     const inputFields = withoutInputFields ? null : this._renderInputFields();
 
     return (
-      <span>
+      <div>
         <div
           ref="slider"
           className={newClassName}
           style={newStyle}
-          onMouseDown={disabled ? null : this._onSliderMouseDown}
-          onClick={disabled ? null : this._onSliderClick}
+          onMouseDown={null/*disabled ? null : this._onSliderMouseDown*/}
+          onClick={null/*disabled ? null : this._onSliderClick*/}
           >
           {bars}
           {handles}
         </div>
         {inputFields}
-      </span>
+      </div>
     );
   }
 }

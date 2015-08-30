@@ -9,8 +9,6 @@ class Bars extends Component {
   shouldComponentUpdate = shouldPureComponentUpdate
 
   static propTypes = {
-    index: PropTypes.number,
-
     value: propTypes.value,
     min: propTypes.min,
     max: propTypes.max,
@@ -37,7 +35,7 @@ class Bars extends Component {
   }
 
   _renderBar = (i, valueFrom, valueTo) => {
-    const {index, min, max, barClassName} = this.props;
+    const {min, max, barClassName} = this.props;
 
     return (
       <Bar
@@ -45,7 +43,6 @@ class Bars extends Component {
         valueFrom={valueFrom}
         valueTo={valueTo}
         i={i}
-        index={index}
         min={min}
         max={max}
         barClassName={barClassName}

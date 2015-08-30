@@ -26,9 +26,6 @@ class Handle extends Component {
     // index of this handle
     i: PropTypes.number,
 
-    // crrently selected index
-    index: PropTypes.number,
-
     zIndex: PropTypes.number,
 
     min: propTypes.min,
@@ -38,25 +35,29 @@ class Handle extends Component {
   }
 
   static contextTypes = {
-    _createOnMouseDown: PropTypes.func,
-    _createOnTouchStart: PropTypes.func,
-    _onFocus: PropTypes.func,
-    _onBlur: PropTypes.func,
-    _onKeyDown: PropTypes.func,
+    _start: PropTypes.func,
+    _move: PropTypes.func,
+    _end: PropTypes.func,
+
+    _measureSliderLength: PropTypes.func,
 
     _posMinKey: PropTypes.func,
     _axisKey: PropTypes.func,
     _orthogonalAxisKey: PropTypes.func,
+
+    invert: PropTypes.bool,
   }
 
+  state = {active: false}
+
   render() {
-    const {i, index, handleClassName, handleActiveClassName, disabled, children} = this.props;
-    const {_createOnMouseDown, _createOnTouchStart, _onFocus, _onBlur, _onKeyDown} = this.context;
+    const {i, handleClassName, handleActiveClassName, disabled, children} = this.props;
+    const {active} = this.state;
 
     // console.log(`Render handle ${i}`);
 
-    const isActive = index === i ? handleActiveClassName : '';
-    const className = `${handleClassName} ${handleClassName}-${i} ${isActive}`;
+    const isActiveClassName = active ? ` ${handleActiveClassName}` : ``;
+    const className = `${handleClassName} ${handleClassName}-${i}${isActiveClassName}`;
 
     const style = this._buildHandleStyle();
 
@@ -65,11 +66,11 @@ class Handle extends Component {
         className={className}
         style={style}
         tabIndex={disabled ? null : '0'}
-        onMouseDown={disabled ? null : _createOnMouseDown(i)}
-        onTouchStart={disabled ? null : _createOnTouchStart(i)}
-        onFocus={disabled ? null : () => _onFocus(i)}
-        onBlur={disabled ? null : _onBlur}
-        onKeyDown={disabled ? null : _onKeyDown}
+        onMouseDown={disabled ? null : this._onMouseDown}
+        onTouchStart={disabled ? null : this._onTouchStart}
+        onFocus={disabled ? null : () => this._onFocus(i)}
+        onBlur={disabled ? null : this._onBlur}
+        onKeyDown={disabled ? null : this._onKeyDown}
         >
         {children}
       </div>
@@ -91,6 +92,7 @@ class Handle extends Component {
     };
   }
 
+  // FIXME: just return (x, y), change other code
   _getMousePosition= (e) => {
     const {_axisKey, _orthogonalAxisKey} = this.context;
 
@@ -100,6 +102,7 @@ class Handle extends Component {
     ];
   }
 
+  // FIXME: just return (x, y), change other code
   _getTouchPosition = (e) => {
     const {_axisKey, _orthogonalAxisKey} = this.context;
 
@@ -114,20 +117,16 @@ class Handle extends Component {
 
   // start onStart
   _onMouseDown = (e) => {
-    const {i} = this.props;
-
     const [position] = this._getMousePosition(e);
 
     addHandlers(this._mouseEventMap);
 
     pauseEvent(e);
 
-    this._onStart(i, position);
+    this._onStart(position, e);
   }
 
   _onTouchStart = (e) => {
-    const {i} = this.props;
-
     // TODO: remove when todo above is implemented
     if (e.touches.length > 1) return;
 
@@ -141,11 +140,11 @@ class Handle extends Component {
 
     stopPropagation(e);
 
-    this._onStart(i, position, e);
+    this._onStart(position, e);
   }
 
-  _onStart = (i, position, e) => {
-    if (this.onStart) this.onStart(e);
+  _onStart = (position, e) => {
+    if (this.onStart) this.onStart(position, e);
   }
   // end onStart
 
@@ -156,6 +155,7 @@ class Handle extends Component {
   }
 
   _onTouchMove = (e) => {
+    // FIXME: find out if "nearest" touch is still there
     if (e.touches.length > 1) return;
 
     const [positionMainDir, positionScrollDir] = this._getTouchPosition(e);
@@ -178,25 +178,72 @@ class Handle extends Component {
   }
 
   _onMove = (position, e) => {
-    if (this.onMove) this.onMove(e);
-  }
-
-  _onMouseUp = (e) => {
-    this._onEnd(this._mouseEventMap, e);
+    if (this.onMove) this.onMove(position, e);
   }
   // end onMove
 
-  // being onEnd
+  // begin onEnd
+  _onMouseUp = (e) => {
+    this._onEnd(this._mouseEventMap, e);
+  }
+
   _onTouchEnd = (e) => {
     this._onEnd(this._touchEventMap, e);
   }
 
   _onEnd = (eventMap, e) => {
-    removeHandlers(this._touchEventMap);
-
+    removeHandlers(eventMap);
     if (this.onEnd) this.onEnd(e);
   }
   // end onEnd
+
+  onStart = (position) => {
+    const {v, i} = this.props;
+    const {_measureSliderLength, _start} = this.context;
+
+    this._startValue = v;
+    this._startPosition = position;
+    this._sliderLength = _measureSliderLength();
+
+    this.setState({active: true});
+
+    _start(i);
+  }
+
+  onMove = (position) => {
+    const {_sliderLength, _startPosition, _startValue} = this;
+    const {i, min, max} = this.props;
+    const {invert, _move} = this.context;
+
+    let diffPosition = position - _startPosition;
+
+    // FIXME: don't depend on invert (and don't pass via context)
+    if (invert) diffPosition *= -1;
+
+    const diffValue = diffPosition / _sliderLength * (max - min);
+
+    _move(i, _startValue + diffValue);
+  }
+
+  onEnd = () => {
+    const {_end} = this.context;
+
+    this.setState({active: false});
+
+    _end();
+  }
+
+  _onFocus = () => {
+    this.setState({active: true});
+  }
+
+  _onBlur = () => {
+    this.setState({active: false});
+  }
+
+  _onKeyDown = () => {
+    // FIXME: call _move with correct values
+  }
 
   _getMouseEventMap = () => {
     return [
