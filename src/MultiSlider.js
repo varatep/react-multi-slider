@@ -54,10 +54,10 @@ class MultiSlider extends Component {
 
     _posMinKey: PropTypes.func,
     _posMaxKey: PropTypes.func,
-    _axisKey: PropTypes.func,
-    _orthogonalAxisKey: PropTypes.func,
     _incKey: PropTypes.func,
     _decKey: PropTypes.func,
+
+    _getPosition: PropTypes.func,
   }
 
   getChildContext() {
@@ -78,10 +78,10 @@ class MultiSlider extends Component {
       // orientation methods
       _posMinKey: this._posMinKey,
       _posMaxKey: this._posMaxKey,
-      _axisKey: this._axisKey,
-      _orthogonalAxisKey: this._orthogonalAxisKey,
       _incKey: this._incKey,
       _decKey: this._decKey,
+
+      _getPosition: this._getPosition,
     };
   }
 
@@ -95,9 +95,6 @@ class MultiSlider extends Component {
     return {
       zIndices,
       value: trimmedValue,
-
-      // FIXME: allow moving more than one handle at a time
-      index: -1,
     };
   }
 
@@ -122,7 +119,7 @@ class MultiSlider extends Component {
   // If no custom handles are provided, just returns `value` if present and `defaultValue` otherwise.
   // If custom handles are present but neither `value` nor `defaultValue` are applicable the handles are spread out
   // equally.
-  // TODO: better name? better solution?
+  // TODO: better name? better solution? --> turning this into a "true"  controlled component should remove the need for this
   _or = (value, defaultValue) => {
     const {children, min, max} = this.props;
 
@@ -290,10 +287,6 @@ class MultiSlider extends Component {
     }
   }
 
-  _end = () => {
-    this._fireChangeEvent('onAfterChange');
-  }
-
   _pushSucceeding = (value, minDistance, index) => {
     for (let i = index, padding = value[i] + minDistance;
          value[i + 1] && padding > value[i + 1];
@@ -326,6 +319,11 @@ class MultiSlider extends Component {
         nextValue[i] = padding;
       }
     }
+  }
+
+  _end = () => {
+    this._hasMoved = false;
+    this._fireChangeEvent('onAfterChange');
   }
 
   _axisKey = () => {
@@ -436,6 +434,20 @@ class MultiSlider extends Component {
     );
   }
 
+  _renderInputFields = () => {
+    const {name, disabled, inputFieldClassName} = this.props;
+    const {value} = this.state;
+
+    return (
+      <InputFields
+        value={value}
+        name={name}
+        disabled={disabled}
+        inputFieldClassName={inputFieldClassName}
+        />
+    );
+  }
+
   /*
   _onSliderMouseDown = (e) => {
     const {snapDragDisabled} = this.props;
@@ -459,20 +471,21 @@ class MultiSlider extends Component {
 
     pauseEvent(e);
   }
+  */
 
-  _onSliderClick = (e) => {
+  _onSliderMouseUp = (e) => {
     const {onSliderClick} = this.props;
 
     if (onSliderClick && !this._hasMoved) {
-      this._takeMeasurements();
+      // TODO: measure slider
+      //this._takeMeasurements();
 
-      const [position] = this._getMousePosition(e);
+      const [position] = this._getPosition(e);
       const valueAtPos = this._trimAlignValue(this._calcValue(this._calcOffsetFromPosition(position)));
 
       onSliderClick(valueAtPos);
     }
   }
-  */
 
   _fireChangeEvent = (eventType) => {
     const {value} = this.state;
@@ -483,18 +496,12 @@ class MultiSlider extends Component {
     }
   }
 
-  _renderInputFields = () => {
-    const {name, disabled, inputFieldClassName} = this.props;
-    const {value} = this.state;
-
-    return (
-      <InputFields
-        value={value}
-        name={name}
-        disabled={disabled}
-        inputFieldClassName={inputFieldClassName}
-        />
-    );
+  // FIXME: just return (x, y), change other code
+  _getPosition= (e) => {
+    return [
+      e[`page${this._axisKey()}`],
+      e[`page${this._orthogonalAxisKey()}`],
+    ];
   }
 
   render() {
@@ -514,7 +521,7 @@ class MultiSlider extends Component {
           className={newClassName}
           style={newStyle}
           onMouseDown={null/*disabled ? null : this._onSliderMouseDown*/}
-          onClick={null/*disabled ? null : this._onSliderClick*/}
+          onMouseUp={null/*disabled ? null : this._onSliderMouseUp*/}
           >
           {bars}
           {handles}

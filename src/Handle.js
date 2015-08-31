@@ -47,10 +47,11 @@ class Handle extends Component {
     _measureSliderLength: PropTypes.func,
 
     _posMinKey: PropTypes.func,
-    _axisKey: PropTypes.func,
-    _orthogonalAxisKey: PropTypes.func,
     _incKey: PropTypes.func,
     _decKey: PropTypes.func,
+
+    _getMousePosition: PropTypes.func,
+    _getTouchPosition: PropTypes.func,
   }
 
   state = {active: false}
@@ -97,27 +98,18 @@ class Handle extends Component {
     };
   }
 
-  // FIXME: just return (x, y), change other code
-  _getMousePosition= (e) => {
-    const {_axisKey, _orthogonalAxisKey} = this.context;
-
-    return [
-      e[`page${_axisKey()}`],
-      e[`page${_orthogonalAxisKey()}`],
-    ];
+  _getMousePosition = (e) => {
+    const {_getPosition} = this.context;
+    return _getPosition(e);
   }
 
-  // FIXME: just return (x, y), change other code
-  _getTouchPosition = (e) => {
-    const {_axisKey, _orthogonalAxisKey} = this.context;
+  _getTouchPosition = ({touches}) => {
+    const {_getPosition} = this.context;
 
-    // TODO: use closest touch
-    const [touch] = e.touches;
+    // TODO: get "closest" touch to last touch
+    const [touch] = touches;
 
-    return [
-      touch[`page${_axisKey()}`],
-      touch[`page${_orthogonalAxisKey()}`],
-    ];
+    return _getPosition(touch);
   }
 
   // start onStart

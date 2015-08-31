@@ -3,7 +3,7 @@ import MultiSlider from '../../../src/index.js';
 
 export default class App extends Component {
 
-  state = {value: [0, 100]}
+  state = {value: [0, 1]}
 
   onChange = (value) => {
     this.setState({value});
