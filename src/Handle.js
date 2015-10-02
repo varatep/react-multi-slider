@@ -2,7 +2,7 @@ import React, {PropTypes, Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
 import {pauseEvent, stopPropagation} from './common';
-import propTypes from './propTypes';
+import {propTypes} from './props.js';
 
 const SHIFT_MULTIPLIER = 10;
 

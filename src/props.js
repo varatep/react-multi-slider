@@ -1,6 +1,6 @@
-import { PropTypes } from 'react';
+import {PropTypes} from 'react';
 
-export default {
+export const propTypes = {
   /**
    * The minimum value of the slider.
    */
@@ -138,4 +138,25 @@ export default {
    * Most likely you want to use this to make them invisible.
    */
   inputFieldClassName: PropTypes.string,
+};
+
+export const defaultProps = {
+  min: 0,
+  max: 100,
+  step: 1,
+  minDistance: 0,
+  defaultValue: 0,
+  orientation: 'horizontal',
+  className: 'slider',
+  style: null,
+  handleClassName: 'handle',
+  handleActiveClassName: 'active',
+  barClassName: 'bar',
+  withBars: false,
+  pearling: false,
+  disabled: false,
+  snapDragDisabled: false,
+  invert: false,
+  withoutInputFields: false,
+  inputFieldClassName: 'input',
 };

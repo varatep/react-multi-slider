@@ -1,8 +1,8 @@
-import React, {PropTypes, Component} from 'react';
+import React, {Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
-import propTypes from './propTypes';
-import Bar from './Bar';
+import {propTypes} from './props.js';
+import Bar from './Bar.js';
 
 class Bars extends Component {
 

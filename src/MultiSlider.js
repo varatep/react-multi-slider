@@ -1,11 +1,11 @@
 import React, {PropTypes, Component} from 'react';
 
 import {linspace, ensureArray, undoEnsureArray} from './common';
-import propTypes from './propTypes';
+import {propTypes, defaultProps} from './props.js';
 
-import Handles from './Handles';
-import Bars from './Bars';
-import InputFields from './InputFields';
+import Handles from './Handles.js';
+import Bars from './Bars.js';
+import InputFields from './InputFields.js';
 
 const LEFT_KEY = 37;
 const UP_KEY = 38;
@@ -16,27 +16,7 @@ const DOWN_KEY = 40;
 class MultiSlider extends Component {
 
   static propTypes = propTypes
-
-  static defaultProps = {
-    min: 0,
-    max: 100,
-    step: 1,
-    minDistance: 0,
-    defaultValue: 0,
-    orientation: 'horizontal',
-    className: 'slider',
-    style: null,
-    handleClassName: 'handle',
-    handleActiveClassName: 'active',
-    barClassName: 'bar',
-    withBars: false,
-    pearling: false,
-    disabled: false,
-    snapDragDisabled: false,
-    invert: false,
-    withoutInputFields: false,
-    inputFieldClassName: 'input',
-  }
+  static defaultProps = defaultProps
 
   static childContextTypes = {
     invert: PropTypes.bool,
