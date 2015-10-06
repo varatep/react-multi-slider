@@ -75,6 +75,7 @@ class MultiSlider extends Component {
     return {
       zIndices,
       value: trimmedValue,
+      activeHandles: {},
     };
   }
 
@@ -200,16 +201,21 @@ class MultiSlider extends Component {
   }
 
   _start = (index) => {
-    const {zIndices} = this.state;
+    const {activeHandles, zIndices} = this.state;
 
     this._hasMoved = false;
 
     zIndices.splice(zIndices.indexOf(index), 1); // remove wherever the element is
     zIndices.push(index); // add to end
 
+    activeHandles[index] = true;
+
     this._fireChangeEvent('onBeforeChange');
 
-    this.setState({zIndices: [...zIndices]});
+    this.setState({
+      activeHandles,
+      zIndices: [...zIndices],
+    });
   }
 
   _move = (index, toValue) => {
@@ -301,9 +307,17 @@ class MultiSlider extends Component {
     }
   }
 
-  _end = () => {
+  _end = (index) => {
+    const {activeHandles} = this.state;
+
     this._hasMoved = false;
     this._fireChangeEvent('onAfterChange');
+
+    delete activeHandles[index];
+
+    this.setState({
+      activeHandles: {...activeHandles},
+    });
   }
 
   _axisKey = () => {
@@ -383,11 +397,12 @@ class MultiSlider extends Component {
 
   _renderHandles = () => {
     const {min, max, handleClassName, handleActiveClassName, disabled, children} = this.props;
-    const {value, zIndices} = this.state;
+    const {value, activeHandles, zIndices} = this.state;
 
     return (
       <Handles
         value={value}
+        activeHandles={activeHandles}
         zIndices={zIndices}
         min={min}
         max={max}

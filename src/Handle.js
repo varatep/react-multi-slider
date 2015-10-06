@@ -50,15 +50,11 @@ class Handle extends Component {
     _incKey: PropTypes.func,
     _decKey: PropTypes.func,
 
-    _getMousePosition: PropTypes.func,
-    _getTouchPosition: PropTypes.func,
+    _getPosition: PropTypes.func,
   }
 
-  state = {active: false}
-
   render() {
-    const {i, handleClassName, handleActiveClassName, disabled, children} = this.props;
-    const {active} = this.state;
+    const {i, handleClassName, handleActiveClassName, disabled, children, active} = this.props;
 
     // console.log(`Render handle ${i}`);
 
@@ -208,8 +204,6 @@ class Handle extends Component {
     this._startPosition = position;
     this._sliderLength = _measureSliderLength();
 
-    this.setState({active: true});
-
     _start(i);
   }
 
@@ -229,28 +223,24 @@ class Handle extends Component {
   }
 
   onEnd = () => {
+    const {i} = this.props;
     const {_end} = this.context;
 
-    this.setState({active: false});
-
-    _end();
+    _end(i);
   }
 
   _onFocus = () => {
     const {i} = this.props;
     const {_start} = this.context;
 
-    this.setState({active: true});
-
     _start(i);
   }
 
   _onBlur = () => {
+    const {i} = this.props;
     const {_end} = this.context;
 
-    this.setState({active: false});
-
-    _end();
+    _end(i);
   }
 
   _onKeyDown = ({which, shiftKey}) => {

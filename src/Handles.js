@@ -9,6 +9,7 @@ class Handles extends Component {
   shouldComponentUpdate = shouldPureComponentUpdate
 
   static propTypes = {
+    activeHandles: PropTypes.arrayOf(PropTypes.bool),
     zIndices: PropTypes.arrayOf(PropTypes.number),
 
     value: propTypes.value,
@@ -37,13 +38,14 @@ class Handles extends Component {
   }
 
   _renderHandle = (child, v, i) => {
-    const {handleClassName, handleActiveClassName, zIndices, min, max, disabled} = this.props;
+    const {handleClassName, handleActiveClassName, activeHandles, zIndices, min, max, disabled} = this.props;
 
     return (
       <Handle
         key={`handle-${i}`}
         v={v}
         i={i}
+        active={activeHandles[i]}
         zIndex={zIndices.indexOf(i)}
         min={min}
         max={max}

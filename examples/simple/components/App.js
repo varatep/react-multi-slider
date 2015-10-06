@@ -16,7 +16,7 @@ export default class App extends Component {
     return (
       <form method="GET" action="/examples/simple/index.html">
         <MultiSlider
-          name="name"
+          name="key"
           className="horizontal-slider"
           orientation="horizontal"
           min={0}
