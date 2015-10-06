@@ -65,62 +65,66 @@ class MultiSlider extends Component {
     };
   }
 
-  _getInitialState = () => {
-    const {value, defaultValue} = this.props;
-
-    const orValue = this._or(ensureArray(value), ensureArray(defaultValue));
-    const trimmedValue = orValue.map(v => this._trimAlignValue(v, this.props));
-    const zIndices = orValue.map((_, i) => i);
-
-    return {
-      zIndices,
-      value: trimmedValue,
-      activeHandles: {},
-    };
-  }
-
   constructor(props) {
     super(props);
     this.state = this._getInitialState();
   }
 
-  // Keep the internal `value` consistent with an outside `value` if present.
-  // This basically allows the slider to be a controlled component.
-  // FIXME: turn into proper controlled component (do nothing unless value prop changes)
   componentWillReceiveProps(newProps) {
-    const {value} = this.state;
-
-    const orValue = this._or(ensureArray(newProps.value), value);
-    const trimmedValue = orValue.map(v => this._trimAlignValue(v, newProps));
-
-    this.setState({value: trimmedValue});
+    this.setState(this._syncState(newProps));
   }
 
-  // Check if the arity of `value` or `defaultValue` matches the number of children (= number of custom handles).
-  // If no custom handles are provided, just returns `value` if present and `defaultValue` otherwise.
-  // If custom handles are present but neither `value` nor `defaultValue` are applicable the handles are spread out
-  // equally.
-  // TODO: better name? better solution? --> turning this into a "true"  controlled component should remove the need for this
-  _or = (value, defaultValue) => {
-    const {children, min, max} = this.props;
+  _syncState = (props) => {
+    const {value, defaultValue, min, max, children} = props;
 
-    const count = React.Children.count(children);
+    // TODO: factor into method
+    let usedValue;
+    let valueKey;
 
-    switch (count) {
-      case 0:
-        return value.length > 0 ? value : defaultValue;
-      case value.length:
-        return value;
-      case defaultValue.length:
-        return defaultValue;
-      default:
-        return linspace(min, max, count);
+    if (value) {
+      valueKey = 'value';
+      usedValue = value;
+    } else if (!this.state) {
+      if (defaultValue) {
+        valueKey = 'defaultValue';
+        usedValue = defaultValue;
+      } else {
+        valueKey = 'defaultValue';
+        const count = React.Children.count(children);
+        if (count > 0) {
+          usedValue = linspace(min, max, count);
+        } else {
+          usedValue = 0;
+        }
+      }
+    } else {
+      return {};
     }
+
+    // TODO: really trim here?
+    usedValue = ensureArray(usedValue).map(v => this._trimAlignValue(v, props));
+
+    return {
+      [valueKey]: usedValue,
+    };
+  }
+
+  _getInitialState = () => {
+    const {value, defaultValue} = this.props;
+    const state = this._syncState(this.props);
+    const zIndices = (value || defaultValue).map((_, i) => i);
+
+    return {
+      ...state,
+      zIndices,
+      activeHandles: {},
+    };
   }
 
   getValue() {
-    const {value} = this.state;
-    return undoEnsureArray(value);
+    // FIXME: there's potential for inconsistencies when a value was used, and then unused (or is that even possible?)
+    const {value, defaultValue} = this.state;
+    return undoEnsureArray(value || defaultValue);
   }
 
   // calculates the offset of a handle in pixels based on its value.
@@ -142,12 +146,12 @@ class MultiSlider extends Component {
   }
 
   _getClosestIndex = (clickOffset) => {
-    const {value} = this.state;
+    const {defaultValue} = this.state;
 
     let minDist = Number.MAX_VALUE;
     let closestIndex = -1;
 
-    for (let [i, v] of value.entries()) {
+    for (let [i, v] of defaultValue.entries()) {
       const offset = this._calcOffset(v);
       const dist = Math.abs(clickOffset - offset);
 
@@ -171,18 +175,18 @@ class MultiSlider extends Component {
     const clickOffset = this._calcOffsetFromPosition(position);
     const nextValue = this._trimAlignValue(this._calcValue(clickOffset));
 
-    const value = [...this.state.value]; // Clone this.state.value since we'll modify it temporarily
+    const defaultValue = [...this.state.defaultValue]; // Clone this.state.value since we'll modify it temporarily
 
     const closestIndex = this._getClosestIndex(clickOffset);
-    value[closestIndex] = nextValue;
+    defaultValue[closestIndex] = nextValue;
 
     // Prevents the slider from shrinking below `props.minDistance`
     // FIXME: Isn't this implemented already?
-    for (let [i] of value.entries()) {
-      if (value[i + 1] - value[i] < minDistance) return [value, -1];
+    for (let [i] of defaultValue.entries()) {
+      if (defaultValue[i + 1] - defaultValue[i] < minDistance) return [defaultValue, -1];
     }
 
-    return [value, closestIndex];
+    return [defaultValue, closestIndex];
   }
 
   // FIXME: take correct measurements when component is transformed via CSS
@@ -220,7 +224,8 @@ class MultiSlider extends Component {
 
   _move = (index, toValue) => {
     const {min, max, minDistance, pearling, disabled} = this.props;
-    const {value} = this.state;
+    const {value, defaultValue} = this.state;
+    const usedValue = [...(value || defaultValue)];
 
     this._hasMoved = true;
 
@@ -229,8 +234,8 @@ class MultiSlider extends Component {
     // so checking here again is probably redundant.
     if (disabled) return;
 
-    const {length} = value;
-    const oldValue = value[index];
+    const {length} = usedValue;
+    const oldValue = usedValue[index];
 
     let newValue = this._trimAlignValue(toValue);
 
@@ -238,39 +243,34 @@ class MultiSlider extends Component {
     // prevent the handle from getting closer than `minDistance` to the previous or next handle.
     if (!pearling) {
       if (index > 0) {
-        const valueBefore = value[index - 1];
+        const valueBefore = usedValue[index - 1];
         if (newValue < valueBefore + minDistance) {
           newValue = valueBefore + minDistance;
         }
       }
 
       if (index < length - 1) {
-        const valueAfter = value[index + 1];
+        const valueAfter = usedValue[index + 1];
         if (newValue > valueAfter - minDistance) {
           newValue = valueAfter - minDistance;
         }
       }
     }
 
-    value[index] = newValue;
+    usedValue[index] = newValue;
 
     // if "pearling" is enabled, let the current handle push the pre- and succeeding handles.
     if (pearling && length > 1) {
       if (newValue > oldValue) {
-        this._pushSucceeding(value, minDistance, index);
-        this._trimSucceeding(length, value, minDistance, max);
+        this._pushSucceeding(usedValue, minDistance, index);
+        this._trimSucceeding(length, usedValue, minDistance, max);
       } else if (newValue < oldValue) {
-        this._pushPreceding(value, minDistance, index);
-        this._trimPreceding(length, value, minDistance, min);
+        this._pushPreceding(usedValue, minDistance, index);
+        this._trimPreceding(length, usedValue, minDistance, min);
       }
     }
 
-    // Normally you would use `shouldComponentUpdate`, but since the slider is a low-level component,
-    // the extra complexity might be worth the extra performance.
-    if (newValue !== oldValue) {
-      // FIXME: better solution around pure render than copying the array?
-      this.setState({value: [...value]}, () => this._fireChangeEvent('onChange'));
-    }
+    this.setState({defaultValue: usedValue}, () => this._fireChangeEvent('onChange'));
   }
 
   _pushSucceeding = (value, minDistance, index) => {
@@ -397,11 +397,11 @@ class MultiSlider extends Component {
 
   _renderHandles = () => {
     const {min, max, handleClassName, handleActiveClassName, disabled, children} = this.props;
-    const {value, activeHandles, zIndices} = this.state;
+    const {value, defaultValue, activeHandles, zIndices} = this.state;
 
     return (
       <Handles
-        value={value}
+        value={value || defaultValue}
         activeHandles={activeHandles}
         zIndices={zIndices}
         min={min}
@@ -417,11 +417,11 @@ class MultiSlider extends Component {
 
   _renderBars = () => {
     const {min, max, barClassName} = this.props;
-    const {value} = this.state;
+    const {value, defaultValue} = this.state;
 
     return (
       <Bars
-        value={value}
+        value={value || defaultValue}
         min={min}
         max={max}
         barClassName={barClassName}
@@ -431,11 +431,11 @@ class MultiSlider extends Component {
 
   _renderInputFields = () => {
     const {name, disabled, inputFieldClassName} = this.props;
-    const {value} = this.state;
+    const {value, defaultValue} = this.state;
 
     return (
       <InputFields
-        value={value}
+        value={value || defaultValue}
         name={name}
         disabled={disabled}
         inputFieldClassName={inputFieldClassName}
@@ -483,11 +483,10 @@ class MultiSlider extends Component {
   }
 
   _fireChangeEvent = (eventType) => {
-    const {value} = this.state;
-    const callback = this.props[eventType];
-
+    const {[eventType]: callback} = this.props;
+    const {defaultValue} = this.state;
     if (callback) {
-      callback(undoEnsureArray(value));
+      callback(undoEnsureArray(defaultValue));
     }
   }
 

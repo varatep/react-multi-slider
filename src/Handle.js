@@ -271,6 +271,7 @@ class Handle extends Component {
   }
 
   _mouseEventMap = this._getMouseEventMap()
+
   _touchEventMap = this._getTouchEventMap()
 }
 

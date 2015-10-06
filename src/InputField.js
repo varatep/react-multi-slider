@@ -23,7 +23,7 @@ class InputField extends Component {
         type="number"
         name={name}
         className={inputFieldClassName}
-        value={v}
+        defaultValue={v}
         onFocus={() => _onFocus(i)}
         onChange={e => _move(e.target.value)}
         onBlur={_onBlur}

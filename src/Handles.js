@@ -9,7 +9,7 @@ class Handles extends Component {
   shouldComponentUpdate = shouldPureComponentUpdate
 
   static propTypes = {
-    activeHandles: PropTypes.arrayOf(PropTypes.bool),
+    activeHandles: PropTypes.objectOf(PropTypes.bool),
     zIndices: PropTypes.arrayOf(PropTypes.number),
 
     value: propTypes.value,
