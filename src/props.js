@@ -122,12 +122,6 @@ export const propTypes = {
   onAfterChange: PropTypes.func,
 
   /**
-   * Callback called when the the slider is clicked (handle or bars).
-   * Receives the value at the clicked position as argument.
-   */
-  onSliderClick: PropTypes.func,
-
-  /**
    * No <input/> fields will be rendered if this flag is set.
    * Without the <input/> elements the slider will not work as part of a <form/>.
    */

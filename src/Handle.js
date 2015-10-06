@@ -44,7 +44,7 @@ class Handle extends Component {
     _move: PropTypes.func,
     _end: PropTypes.func,
 
-    _measureSliderLength: PropTypes.func,
+    _measureSlider: PropTypes.func,
 
     _posMinKey: PropTypes.func,
     _incKey: PropTypes.func,
@@ -192,7 +192,7 @@ class Handle extends Component {
 
   onStart = (position) => {
     const {v, i} = this.props;
-    const {_measureSliderLength, _start} = this.context;
+    const {_measureSlider, _start} = this.context;
 
     // TODO: find out if necessary with tabindex
     // if activeElement is body window will lost focus in IE9
@@ -200,9 +200,11 @@ class Handle extends Component {
       document.activeElement.blur();
     }
 
+    const {sliderLength} = _measureSlider();
+
     this._startValue = v;
     this._startPosition = position;
-    this._sliderLength = _measureSliderLength();
+    this._sliderLength = sliderLength;
 
     _start(i);
   }

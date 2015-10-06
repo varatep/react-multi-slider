@@ -30,7 +30,7 @@ class MultiSlider extends Component {
     _move: PropTypes.func,
     _end: PropTypes.func,
 
-    _measureSliderLength: PropTypes.func,
+    _measureSlider: PropTypes.func,
 
     _posMinKey: PropTypes.func,
     _posMaxKey: PropTypes.func,
@@ -53,7 +53,7 @@ class MultiSlider extends Component {
       _end: this._end,
 
       // measurement methods
-      _measureSliderLength: this._measureSliderLength,
+      _measureSlider: this._measureSlider,
 
       // orientation methods
       _posMinKey: this._posMinKey,
@@ -128,8 +128,7 @@ class MultiSlider extends Component {
   }
 
   // calculates the offset of a handle in pixels based on its value.
-  _calcOffset = (value) => {
-    const {sliderLength} = this;
+  _calcOffset = (value, sliderLength) => {
     const {min, max} = this.props;
 
     const ratio = (value - min) / (max - min);
@@ -137,22 +136,22 @@ class MultiSlider extends Component {
   }
 
   // calculates the value corresponding to a given pixel offset, i.e. the inverse of `_calcOffset`.
-  _calcValue = (offset) => {
-    const {sliderLength} = this;
+  _calcValue = (offset, sliderLength) => {
     const {min, max} = this.props;
 
     const ratio = offset / sliderLength;
     return ratio * (max - min) + min;
   }
 
-  _getClosestIndex = (clickOffset) => {
-    const {defaultValue} = this.state;
+  _getClosestIndex = (clickOffset, sliderLength) => {
+    const {value, defaultValue} = this.state;
+    const usedValue = value || defaultValue;
 
     let minDist = Number.MAX_VALUE;
     let closestIndex = -1;
 
-    for (let [i, v] of defaultValue.entries()) {
-      const offset = this._calcOffset(v);
+    for (let [i, v] of usedValue.entries()) {
+      const offset = this._calcOffset(v, sliderLength);
       const dist = Math.abs(clickOffset - offset);
 
       if (dist <= minDist) {
@@ -164,33 +163,22 @@ class MultiSlider extends Component {
     return closestIndex;
   }
 
-  _calcOffsetFromPosition = (position) => {
-    const {sliderStart} = this;
+  _calcOffsetFromPosition = (position, sliderStart) => {
     return Math.abs(position - sliderStart);
   }
 
-  _calcValueFromPosition = (position) => {
-    const {minDistance} = this.props;
+  _calcValueFromPosition = (position, sliderStart, sliderLength) => {
+    const clickOffset = this._calcOffsetFromPosition(position, sliderStart);
 
-    const clickOffset = this._calcOffsetFromPosition(position);
-    const nextValue = this._trimAlignValue(this._calcValue(clickOffset));
+    const nextValue = this._trimAlignValue(this._calcValue(clickOffset, sliderLength));
+    const closestIndex = this._getClosestIndex(clickOffset, sliderLength);
 
-    const defaultValue = [...this.state.defaultValue]; // Clone this.state.value since we'll modify it temporarily
-
-    const closestIndex = this._getClosestIndex(clickOffset);
-    defaultValue[closestIndex] = nextValue;
-
-    // Prevents the slider from shrinking below `props.minDistance`
-    // FIXME: Isn't this implemented already?
-    for (let [i] of defaultValue.entries()) {
-      if (defaultValue[i + 1] - defaultValue[i] < minDistance) return [defaultValue, -1];
-    }
-
-    return [defaultValue, closestIndex];
+    return [nextValue, closestIndex];
   }
 
   // FIXME: take correct measurements when component is transformed via CSS
-  _measureSliderLength = () => {
+  _measureSlider = () => {
+    const {invert} = this.props;
     const {slider} = this.refs;
 
     const sizeKey = this._sizeKey();
@@ -201,7 +189,10 @@ class MultiSlider extends Component {
     const sliderMin = sliderNode[`offset${directionKey}`] + sliderNode[`client${directionKey}`];
     const sliderMax = sliderMin + sliderNode[sizeKey];
 
-    return Math.abs(sliderMax - sliderMin);
+    return {
+      sliderStart: invert ? sliderMax : sliderMin,
+      sliderLength: Math.abs(sliderMax - sliderMin),
+    };
   }
 
   _start = (index) => {
@@ -443,42 +434,19 @@ class MultiSlider extends Component {
     );
   }
 
-  /*
-  _onSliderMouseDown = (e) => {
+  _onSliderMouseUp = (e) => {
     const {snapDragDisabled} = this.props;
 
     this._hasMoved = false;
 
     if (!snapDragDisabled) {
-      this._takeMeasurements();
-
-      const [position] = this._getMousePosition(e);
-      const [value, closestIndex] = this._calcValueFromPosition(position);
+      const {sliderStart, sliderLength} = this._measureSlider();
+      const [position] = this._getPosition(e);
+      const [value, closestIndex] = this._calcValueFromPosition(position, sliderStart, sliderLength);
 
       if (closestIndex >= 0) {
-        this.setState({value}, () => {
-          this._fireChangeEvent('onChange');
-          this._onStart(closestIndex, position);
-          this._addHandlers(this._getMouseEventMap());
-        });
+        this._move(closestIndex, value);
       }
-    }
-
-    pauseEvent(e);
-  }
-  */
-
-  _onSliderMouseUp = (e) => {
-    const {onSliderClick} = this.props;
-
-    if (onSliderClick && !this._hasMoved) {
-      // TODO: measure slider
-      //this._takeMeasurements();
-
-      const [position] = this._getPosition(e);
-      const valueAtPos = this._trimAlignValue(this._calcValue(this._calcOffsetFromPosition(position)));
-
-      onSliderClick(valueAtPos);
     }
   }
 
@@ -514,8 +482,7 @@ class MultiSlider extends Component {
           ref="slider"
           className={newClassName}
           style={newStyle}
-          onMouseDown={null/*disabled ? null : this._onSliderMouseDown*/}
-          onMouseUp={null/*disabled ? null : this._onSliderMouseUp*/}
+          onMouseUp={disabled ? null : this._onSliderMouseUp}
           >
           {bars}
           {handles}
