@@ -9,7 +9,7 @@ class InputFields extends Component {
   shouldComponentUpdate = shouldPureComponentUpdate
 
   render() {
-    const {value, name, disabled, inputFieldClassName} = this.props;
+    const {value, name, disabled, inputFieldClassName, min, max, step} = this.props;
     return (
       <span>
         {value.map((v, i) =>
@@ -20,6 +20,9 @@ class InputFields extends Component {
             name={name}
             disabled={disabled}
             inputFieldClassName={inputFieldClassName}
+            min={min}
+            max={max}
+            step={step}
             />
         )}
       </span>

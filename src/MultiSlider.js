@@ -37,7 +37,8 @@ class MultiSlider extends Component {
     _incKey: PropTypes.func,
     _decKey: PropTypes.func,
 
-    _getPosition: PropTypes.func,
+    _getMousePosition: PropTypes.func,
+    _getTouchPosition: PropTypes.func,
   }
 
   getChildContext() {
@@ -61,7 +62,8 @@ class MultiSlider extends Component {
       _incKey: this._incKey,
       _decKey: this._decKey,
 
-      _getPosition: this._getPosition,
+      _getMousePosition: this._getMousePosition,
+      _getTouchPosition: this._getTouchPosition,
     };
   }
 
@@ -419,7 +421,7 @@ class MultiSlider extends Component {
   }
 
   _renderInputFields = () => {
-    const {name, disabled, inputFieldClassName} = this.props;
+    const {name, disabled, inputFieldClassName, min, max, step} = this.props;
     const {value, defaultValue} = this.state;
 
     return (
@@ -428,6 +430,9 @@ class MultiSlider extends Component {
         name={name}
         disabled={disabled}
         inputFieldClassName={inputFieldClassName}
+        min={min}
+        max={max}
+        step={step}
         />
     );
   }
@@ -462,6 +467,17 @@ class MultiSlider extends Component {
       e[`page${this._axisKey()}`],
       e[`page${this._orthogonalAxisKey()}`],
     ];
+  }
+
+  _getMousePosition = (e) => {
+    return this._getPosition(e);
+  }
+
+  _getTouchPosition = ({touches}) => {
+    // TODO: get "closest" touch to last touch
+    const [touch] = touches;
+
+    return this._getPosition(touch);
   }
 
   render() {

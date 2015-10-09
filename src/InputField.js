@@ -14,7 +14,7 @@ class InputField extends Component {
   }
 
   render() {
-    const {v, i, name, disabled, inputFieldClassName} = this.props;
+    const {v, i, name, disabled, inputFieldClassName, min, max, step} = this.props;
     const {_onFocus, _move, _onBlur} = this.context;
 
     return (
@@ -24,10 +24,13 @@ class InputField extends Component {
         name={name}
         className={inputFieldClassName}
         defaultValue={v}
+        disabled={disabled}
+        min={min}
+        max={max}
+        step={step}
         onFocus={() => _onFocus(i)}
         onChange={e => _move(e.target.value)}
         onBlur={_onBlur}
-        disabled={disabled}
         />
     );
   }

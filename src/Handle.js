@@ -50,7 +50,8 @@ class Handle extends Component {
     _incKey: PropTypes.func,
     _decKey: PropTypes.func,
 
-    _getPosition: PropTypes.func,
+    _getMousePosition: PropTypes.func,
+    _getTouchPosition: PropTypes.func,
   }
 
   render() {
@@ -94,23 +95,10 @@ class Handle extends Component {
     };
   }
 
-  _getMousePosition = (e) => {
-    const {_getPosition} = this.context;
-    return _getPosition(e);
-  }
-
-  _getTouchPosition = ({touches}) => {
-    const {_getPosition} = this.context;
-
-    // TODO: get "closest" touch to last touch
-    const [touch] = touches;
-
-    return _getPosition(touch);
-  }
-
   // start onStart
   _onMouseDown = (e) => {
-    const [position] = this._getMousePosition(e);
+    const {_getMousePosition} = this.context;
+    const [position] = _getMousePosition(e);
 
     addHandlers(this._mouseEventMap);
 
@@ -120,10 +108,12 @@ class Handle extends Component {
   }
 
   _onTouchStart = (e) => {
+    const {_getTouchPosition} = this.context;
+
     // TODO: remove when todo above is implemented
     if (e.touches.length > 1) return;
 
-    const positions = this._getTouchPosition(e);
+    const positions = _getTouchPosition(e);
     const [position] = positions;
 
     this._startPositions = positions;
@@ -143,15 +133,18 @@ class Handle extends Component {
 
   // being onMove
   _onMouseMove = (e) => {
-    const [position] = this._getMousePosition(e);
+    const {_getMousePosition} = this.context;
+    const [position] = _getMousePosition(e);
     this._onMove(position);
   }
 
   _onTouchMove = (e) => {
+    const {_getTouchPosition} = this.context;
+
     // FIXME: find out if "nearest" touch is still there
     if (e.touches.length > 1) return;
 
-    const [positionMainDir, positionScrollDir] = this._getTouchPosition(e);
+    const [positionMainDir, positionScrollDir] = _getTouchPosition(e);
     const [startPositionMainDir, startPositionScrollDir] = this._startPositions;
 
     if (typeof this._isScrolling === 'undefined') {
