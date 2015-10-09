@@ -3,7 +3,7 @@ import MultiSlider from '../../../src/index.js';
 
 export default class App extends Component {
 
-  state = {value: [0, 1]}
+  state = {value: [0.25, 0.5, 0.75]}
 
   onChange = (value) => {
     this.setState({value});
@@ -11,7 +11,7 @@ export default class App extends Component {
 
   render() {
     const {value} = this.state;
-    const [fst, snd] = value;
+    const [fst, snd, trd] = value;
 
     return (
       <form method="GET" action="/examples/simple/index.html">
@@ -30,6 +30,7 @@ export default class App extends Component {
           >
           <div>{fst}</div>
           <div>{snd}</div>
+          <div>{trd}</div>
         </MultiSlider>
         <button type="submit">Submit</button>
       </form>

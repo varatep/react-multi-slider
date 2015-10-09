@@ -18,6 +18,7 @@ class MultiSlider extends Component {
   static propTypes = propTypes
   static defaultProps = defaultProps
 
+  // FIXME: use less context types / move logic up in the hierarchy
   static childContextTypes = {
     invert: PropTypes.bool,
     step: PropTypes.number,
@@ -48,15 +49,12 @@ class MultiSlider extends Component {
       invert,
       step,
 
-      // state management
       _start: this._start,
       _move: this._move,
       _end: this._end,
 
-      // measurement methods
       _measureSlider: this._measureSlider,
 
-      // orientation methods
       _posMinKey: this._posMinKey,
       _posMaxKey: this._posMaxKey,
       _incKey: this._incKey,
@@ -77,38 +75,37 @@ class MultiSlider extends Component {
   }
 
   _syncState = (props) => {
-    const {value, defaultValue, min, max, children} = props;
-
-    // TODO: factor into method
-    let usedValue;
-    let valueKey;
-
-    if (value) {
-      valueKey = 'value';
-      usedValue = value;
-    } else if (!this.state) {
-      if (defaultValue) {
-        valueKey = 'defaultValue';
-        usedValue = defaultValue;
-      } else {
-        valueKey = 'defaultValue';
-        const count = React.Children.count(children);
-        if (count > 0) {
-          usedValue = linspace(min, max, count);
-        } else {
-          usedValue = 0;
-        }
-      }
-    } else {
-      return {};
-    }
+    const [valueKey, value] = this._getValueKeyAndValue(props);
+    if (valueKey === null) return {};
 
     // TODO: really trim here?
-    usedValue = ensureArray(usedValue).map(v => this._trimAlignValue(v, props));
+    const trimmedValue = ensureArray(value).map(v => this._trimAlignValue(v, props));
 
     return {
-      [valueKey]: usedValue,
+      [valueKey]: trimmedValue,
     };
+  }
+
+  _getValueKeyAndValue = (props) => {
+    const {value, defaultValue, min, max, children} = props;
+
+    if (value) {
+      return ['value', value];
+    } else if (!this.state) {
+      if (defaultValue) {
+        return ['defaultValue', defaultValue];
+      }
+
+      const count = React.Children.count(children);
+
+      if (count >= 2) {
+        return ['defaultValue', linspace(min, max, count)];
+      }
+
+      return ['defaultValue', 0];
+    }
+
+    return [null, null];
   }
 
   _getInitialState = () => {
