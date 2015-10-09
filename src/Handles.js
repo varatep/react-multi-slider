@@ -43,8 +43,8 @@ class Handles extends Component {
     return (
       <Handle
         key={`handle-${i}`}
-        v={v}
-        i={i}
+        value={v}
+        index={i}
         active={activeHandles[i]}
         zIndex={zIndices.indexOf(i)}
         min={min}

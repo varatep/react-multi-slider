@@ -15,8 +15,8 @@ class InputFields extends Component {
         {value.map((v, i) =>
           <InputField
             key={i}
-            v={v}
-            i={i}
+            value={v}
+            index={i}
             name={name}
             disabled={disabled}
             inputFieldClassName={inputFieldClassName}

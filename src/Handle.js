@@ -23,10 +23,8 @@ class Handle extends Component {
   shouldComponentUpdate = shouldPureComponentUpdate
 
   static propTypes = {
-    v: PropTypes.number,
-
-    // index of this handle
-    i: PropTypes.number,
+    value: PropTypes.number,
+    index: PropTypes.number,
 
     zIndex: PropTypes.number,
 
@@ -55,12 +53,12 @@ class Handle extends Component {
   }
 
   render() {
-    const {i, handleClassName, handleActiveClassName, disabled, children, active} = this.props;
+    const {index, handleClassName, handleActiveClassName, disabled, children, active} = this.props;
 
     // console.log(`Render handle ${i}`);
 
     const isActiveClassName = active ? ` ${handleActiveClassName}` : ``;
-    const className = `${handleClassName} ${handleClassName}-${i}${isActiveClassName}`;
+    const className = `${handleClassName} ${handleClassName}-${index}${isActiveClassName}`;
 
     const style = this._buildHandleStyle();
 
@@ -81,11 +79,11 @@ class Handle extends Component {
   }
 
   _buildHandleStyle = () => {
-    const {v, min, max, index, zIndex} = this.props;
+    const {value, min, max, index, zIndex} = this.props;
     const {_posMinKey} = this.context;
 
     const posMinKey = _posMinKey();
-    const offset = v / (max - min) * 100;
+    const offset = value / (max - min) * 100;
 
     return {
       zIndex,
@@ -184,7 +182,7 @@ class Handle extends Component {
   // end onEnd
 
   onStart = (position) => {
-    const {v, i} = this.props;
+    const {value, index} = this.props;
     const {_measureSlider, _start} = this.context;
 
     // TODO: find out if necessary with tabindex
@@ -195,16 +193,16 @@ class Handle extends Component {
 
     const {sliderLength} = _measureSlider();
 
-    this._startValue = v;
+    this._startValue = value;
     this._startPosition = position;
     this._sliderLength = sliderLength;
 
-    _start(i);
+    _start(index);
   }
 
   onMove = (position) => {
     const {_sliderLength, _startPosition, _startValue} = this;
-    const {i, min, max} = this.props;
+    const {index, min, max} = this.props;
     const {invert, _move} = this.context;
 
     let diffPosition = position - _startPosition;
@@ -214,40 +212,40 @@ class Handle extends Component {
 
     const diffValue = diffPosition / _sliderLength * (max - min);
 
-    _move(i, _startValue + diffValue);
+    _move(index, _startValue + diffValue);
   }
 
   onEnd = () => {
-    const {i} = this.props;
+    const {index} = this.props;
     const {_end} = this.context;
 
-    _end(i);
+    _end(index);
   }
 
   _onFocus = () => {
-    const {i} = this.props;
+    const {index} = this.props;
     const {_start} = this.context;
 
-    _start(i);
+    _start(index);
   }
 
   _onBlur = () => {
-    const {i} = this.props;
+    const {index} = this.props;
     const {_end} = this.context;
 
-    _end(i);
+    _end(index);
   }
 
   _onKeyDown = ({which, shiftKey}) => {
-    const {v, i} = this.props;
+    const {value, index} = this.props;
     const {step, _incKey, _decKey, _move} = this.context;
 
     const diffValue = step * (shiftKey ? SHIFT_MULTIPLIER : 1);
 
     if (which === _incKey()) {
-      _move(i, v + diffValue);
+      _move(index, value + diffValue);
     } else if (which === _decKey()) {
-      _move(i, v - diffValue);
+      _move(index, value - diffValue);
     }
   }
 

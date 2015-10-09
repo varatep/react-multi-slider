@@ -1,4 +1,4 @@
-import React, {PropTypes, Component} from 'react';
+import React, {Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
 // import propTypes from './propTypes';
@@ -7,30 +7,21 @@ class InputField extends Component {
 
   shouldComponentUpdate = shouldPureComponentUpdate
 
-  static contextTypes = {
-    _onFocus: PropTypes.func,
-    _move: PropTypes.func,
-    _onBlur: PropTypes.func,
-  }
-
   render() {
-    const {v, i, name, disabled, inputFieldClassName, min, max, step} = this.props;
-    const {_onFocus, _move, _onBlur} = this.context;
+    const {value, index, name, disabled, inputFieldClassName, min, max, step} = this.props;
 
     return (
       <input
-        key={i}
+        key={index}
         type="number"
         name={name}
         className={inputFieldClassName}
-        defaultValue={v}
+        value={value}
         disabled={disabled}
         min={min}
         max={max}
         step={step}
-        onFocus={() => _onFocus(i)}
-        onChange={e => _move(e.target.value)}
-        onBlur={_onBlur}
+        readOnly
         />
     );
   }
