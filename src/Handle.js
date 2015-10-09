@@ -2,7 +2,6 @@ import React, {PropTypes, Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
 import {pauseEvent, stopPropagation} from './common';
-import {propTypes} from './props.js';
 
 const SHIFT_MULTIPLIER = 10;
 
@@ -21,18 +20,6 @@ function removeHandlers(eventMap) {
 class Handle extends Component {
 
   shouldComponentUpdate = shouldPureComponentUpdate
-
-  static propTypes = {
-    value: PropTypes.number,
-    index: PropTypes.number,
-
-    zIndex: PropTypes.number,
-
-    min: propTypes.min,
-    max: propTypes.max,
-    handleClassName: propTypes.handleClassName,
-    handleActiveClassName: propTypes.handleActiveClassName,
-  }
 
   static contextTypes = {
     invert: PropTypes.bool,

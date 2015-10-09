@@ -1,23 +1,11 @@
-import React, {PropTypes, Component} from 'react';
+import React, {Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
-import {propTypes} from './props.js';
 import Handle from './Handle.js';
 
 class Handles extends Component {
 
   shouldComponentUpdate = shouldPureComponentUpdate
-
-  static propTypes = {
-    activeHandles: PropTypes.objectOf(PropTypes.bool),
-    zIndices: PropTypes.arrayOf(PropTypes.number),
-
-    value: propTypes.value,
-    min: propTypes.min,
-    max: propTypes.max,
-    handleClassName: propTypes.handleClassName,
-    handleActiveClassName: propTypes.handleActiveClassName,
-  }
 
   render() {
     return (

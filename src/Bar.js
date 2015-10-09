@@ -1,26 +1,9 @@
 import React, {PropTypes, Component} from 'react';
 import shouldPureComponentUpdate from 'react-pure-render/function';
 
-import {propTypes} from './props.js';
-
 class Bar extends Component {
 
   shouldComponentUpdate = shouldPureComponentUpdate
-
-  static propTypes = {
-    // TODO: rename
-    valueFrom: PropTypes.number,
-
-    // TODO: rename
-    valueTo: PropTypes.number,
-
-    // index of this bar
-    i: PropTypes.number,
-
-    min: propTypes.min,
-    max: propTypes.max,
-    barClassName: propTypes.barClassName,
-  }
 
   static contextTypes = {
     _posMinKey: PropTypes.func,
