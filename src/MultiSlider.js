@@ -184,10 +184,8 @@ class MultiSlider extends Component {
     const sizeKey = this._sizeKey();
     const directionKey = this._directionKey();
 
-    const sliderNode = slider.getDOMNode();
-
-    const sliderMin = sliderNode[`offset${directionKey}`] + sliderNode[`client${directionKey}`];
-    const sliderMax = sliderMin + sliderNode[sizeKey];
+    const sliderMin = slider[`offset${directionKey}`] + slider[`client${directionKey}`];
+    const sliderMax = sliderMin + slider[sizeKey];
 
     return {
       sliderStart: invert ? sliderMax : sliderMin,
