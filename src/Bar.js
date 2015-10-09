@@ -45,7 +45,7 @@ class Bar extends Component {
 
     // TODO: rename valueFrom, valueTo
   _buildBarStyle = (valueFrom, valueTo) => {
-    const {min, max} = this.props;
+    const {min, max, active} = this.props;
     const {_posMinKey, _posMaxKey} = this.context;
 
     const posMinKey = _posMinKey();
@@ -56,8 +56,7 @@ class Bar extends Component {
 
     return {
       position: 'absolute',
-      // FIXME: set will-change while sliding (but don't depend on `index`)
-      // willChange: index >= 0 ? `${posMinKey}, ${posMaxKey}` : '',
+      willChange: active ? `${posMinKey}, ${posMaxKey}` : '',
       [posMinKey]: `${posMin}%`,
       [posMaxKey]: `${posMax}%`,
     };

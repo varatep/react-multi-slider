@@ -79,7 +79,7 @@ class Handle extends Component {
   }
 
   _buildHandleStyle = () => {
-    const {value, min, max, index, zIndex} = this.props;
+    const {value, min, max, zIndex, active} = this.props;
     const {_posMinKey} = this.context;
 
     const posMinKey = _posMinKey();
@@ -88,7 +88,7 @@ class Handle extends Component {
     return {
       zIndex,
       position: 'absolute',
-      willChange: index >= 0 ? posMinKey : '',
+      willChange: active ? posMinKey : '',
       [posMinKey]: `${offset}%`,
     };
   }

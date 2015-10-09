@@ -208,7 +208,7 @@ class MultiSlider extends Component {
     this._fireChangeEvent('onBeforeChange');
 
     this.setState({
-      activeHandles,
+      activeHandles: {...activeHandles},
       zIndices: [...zIndices],
     });
   }
@@ -408,11 +408,12 @@ class MultiSlider extends Component {
 
   _renderBars = () => {
     const {min, max, barClassName} = this.props;
-    const {value, defaultValue} = this.state;
+    const {value, defaultValue, activeHandles} = this.state;
 
     return (
       <Bars
         value={value || defaultValue}
+        activeHandles={activeHandles}
         min={min}
         max={max}
         barClassName={barClassName}

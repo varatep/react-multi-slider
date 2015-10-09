@@ -35,7 +35,7 @@ class Bars extends Component {
   }
 
   _renderBar = (i, valueFrom, valueTo) => {
-    const {min, max, barClassName} = this.props;
+    const {min, max, barClassName, activeHandles} = this.props;
 
     return (
       <Bar
@@ -46,6 +46,7 @@ class Bars extends Component {
         min={min}
         max={max}
         barClassName={barClassName}
+        active={activeHandles[i] || activeHandles[i - 1]}
         />
     );
   }
